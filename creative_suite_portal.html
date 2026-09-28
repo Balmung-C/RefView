@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creative Tool Suite Launcher</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #0d0f12;
+            --bg-card: #151921;
+            --bg-card-hover: #1c222e;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(99, 102, 241, 0.4);
+            --accent-primary: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.15);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.05) 0%, transparent 40%);
+            min-height: 100vh;
+        }
+
+        /* Glassmorphism Card Style */
+        .app-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .app-card:hover {
+            background-color: var(--bg-card-hover);
+            border-color: var(--border-hover);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px -10px var(--accent-glow);
+        }
+
+        /* Filter button states */
+        .filter-btn {
+            transition: all 0.2s ease;
+        }
+        .filter-btn.active {
+            background-color: #6366f1;
+            color: #ffffff;
+            border-color: #6366f1;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Search input styling */
+        .search-input {
+            background: rgba(21, 25, 33, 0.8);
+            border: 1px solid var(--border-color);
+        }
+        .search-input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            outline: none;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <header class="border-b border-white/10 bg-slate-950/40 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+                    <i class="fa-solid fa-cubes text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                        CREATIVE<span class="text-indigo-400 font-mono font-medium text-xs px-2 py-0.5 rounded bg-indigo-950 border border-indigo-800">SUITE</span>
+                    </h1>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="text-sm text-gray-400 hover:text-white transition-colors flex items-center gap-2 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/10">
+                    <i class="fa-brands fa-github text-base"></i>
+                    <span class="hidden sm:inline">Repository</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        
+        <!-- Hero Section -->
+        <div class="mb-10 text-center sm:text-left flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+                <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-2">
+                    Creative Apps Portal
+                </h2>
+                <p class="text-gray-400 text-sm sm:text-base max-w-2xl">
+                    A unified workspace for reference organization, sound design, visual experimentation, and creative planning. Select a tool to launch.
+                </p>
+            </div>
+            
+            <!-- Quick Stats Badge -->
+            <div class="flex items-center justify-center sm:justify-start gap-4 text-xs font-mono text-gray-400 bg-white/5 p-3 rounded-xl border border-white/10">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="app-count">1 Live Tool</span>
+                </div>
+                <span class="text-gray-600">|</span>
+                <div>
+                    <span id="total-count">5 Total Modules</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter and Search Bar -->
+        <div class="flex flex-col md:flex-row gap-4 mb-8 items-stretch md:items-center justify-between">
+            <!-- Search Box -->
+            <div class="relative flex-1 max-w-md">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
+                <input 
+                    type="text" 
+                    id="search-input" 
+                    placeholder="Search apps by name, feature, or tag..." 
+                    class="search-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-white placeholder-gray-500 transition-all"
+                >
+            </div>
+
+            <!-- Category Filter Buttons -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none" id="filter-container">
+                <button class="filter-btn active text-xs font-medium px-3.5 py-2 rounded-lg border border-white/10 bg-white/5 text-gray-300 hover:bg-white/10" data-filter="all">
+                    All Apps
+                </button>
+                <button class="filter-btn text-xs font-medium px-3.5 py-2 rounded-lg border border-white/10 bg-white/5 text-gray-300 hover:bg-white/10" data-filter="visual">
+                    <i class="fa-solid fa-palette mr-1 text-xs"></i> Visual
+                </button>
+                <button class="filter-btn text-xs font-medium px-3.5 py-2 rounded-lg border border-white/10 bg-white/5 text-gray-300 hover:bg-white/10" data-filter="audio">
+                    <i class="fa-solid fa-wave-square mr-1 text-xs"></i> Audio
+                </button>
+                <button class="filter-btn text-xs font-medium px-3.5 py-2 rounded-lg border border-white/10 bg-white/5 text-gray-300 hover:bg-white/10" data-filter="planning">
+                    <i class="fa-solid fa-map mr-1 text-xs"></i> Planning
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="apps-grid">
+
+            <!-- APP 1: Refview -->
+            <div class="app-card rounded-2xl p-6 flex flex-col justify-between relative group" data-category="visual" data-name="refview reference image moodboard canvas viewer" data-status="live">
+                <div>
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 text-xl group-hover:scale-105 transition-transform">
+                            <i class="fa-solid fa-images"></i>
+                        </div>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            Live
+                        </span>
+                    </div>
+
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">
+                        Refview
+                    </h3>
+                    <p class="text-gray-400 text-sm mb-6 leading-relaxed">
+                        Infinite canvas and reference image manager designed for artists, designers, and moodboard creators.
+                    </p>
+                </div>
+
+                <div>
+                    <!-- Tags -->
+                    <div class="flex flex-wrap gap-1.5 mb-6">
+                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-white/5 text-gray-400 border border-white/5">Canvas</span>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-white/5 text-gray-400 border border-white/5">References</span>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-white/5 text-gray-400 border border-white/5">Moodboard</span>
+                    </div>
+
+                    <!-- Action Button -->
+                    <a href="./refview/" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-600/20">
+                        <span>Launch Refview</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- APP 2: Color Palette Studio (In Development) -->
+            <div class="app-card rounded-2xl p-6 flex flex-col justify-between relative group" data-category="visual" data-name="palette chroma color harmony generator gradient studio" data-status="dev">
+                <div>
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 text-xl group-hover:scale-105 transition-transform">
+                            <i class="fa-solid fa-swatchbook"></i>
+                        </div>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            In Dev
+                        </span>
+                    </div>
+
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-purple-300 transition-colors">
+                        Chroma Studio
+                    </h3>
+                    <p class="text-gray-400 text-sm mb-6 leading-relaxed">
+                        Color palette extractor, harmony generator, and accessible theme contrast checker for web and game UI.
+                    </p>
+                </div>
+
+                <div>
+                    <!-- Tags -->
+                    <div class="flex flex-wrap gap-1.5 mb-6">
+                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-white/5 text-gray-400 border border-white/5">Color</span>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-white/5 text-gray-400 border border-white/5">Accessibility</span>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-white/5 text-gray-400 border border-white/5">Export</span>
+                    </div>
+
+                    <!-- Action Button -->
+                    <a href="./chroma-studio/" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium text-sm transition-all border border-white/10">
+                        <span>Launch App</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- APP 3: Audio Loop Synth (Planned) -->
+            <div class="app-card rounded-2xl p-6 flex flex-col justify-between relative group" data-category="audio" data-name="audio synth rhythm loop station music sound sampler" data-status="planned">
+                <div>
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 text-xl group-hover:scale-105 transition-transform">
+                            <i class="fa-solid fa-sliders"></i>
+                        </div>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-500/10 text-gray-400 border border-gray-500/20">
+                            Planned
+                        </span>
+                    </div>
+
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-rose-300 transition-colors">
+                        BeatLab Synthesizer
+                    </h3>
+                    <p class="text-gray-400 text-sm mb-6 leading-relaxed">
+                        Browser-based Web Audio synthesizer for crafting procedural ambient loops and sound effect cues.
+                    </p>
+                </div>
+
+                <div>
+                    <!-- Tags -->
+                    <div class="flex flex-wrap gap-1.5 mb-6">
+                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-white/5 text-gray-400 border border-white/5">Web Audio</span>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-white/5 text-gray-400 border border-white/5">Sequencer</span>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-white/5 text-gray-400 border border-white/5">SFX</span>
+                    </div>
+
+                    <!-- Action Button -->
+                    <button disabled class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 text-gray-500 font-medium text-sm cursor-not-allowed border border-white/5">
+                        <span>Coming Soon</span>
+                        <i class="fa-solid fa-lock text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- APP 4: Storyboard Builder -->
+            <div class="app-card rounded-2xl p-6 flex flex-col justify-between relative group" data-category="planning" data-name="storyboard comic node narrative script layout writer" data-status="dev">
+                <div>
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl group-hover:scale-105 transition-transform">
+                            <i class="fa-solid fa-film"></i>
+                        </div>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            In Dev
+                        </span>
+                    </div>
+
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-amber-300 transition-colors">
+                        StoryFlow Board
+                    </h3>
+                    <p class="text-gray-400 text-sm mb-6 leading-relaxed">
+                        Visual node-based storyboarding and script outline tool for video production and interactive fiction.
+                    </p>
+                </div>
+
+                <div>
+                    <!-- Tags -->
+                    <div class="flex flex-wrap gap-1.5 mb-6">
+                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-white/5 text-gray-400 border border-white/5">Scripting</span>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-white/5 text-gray-400 border border-white/5">Nodes</span>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-white/5 text-gray-400 border border-white/5">Timeline</span>
+                    </div>
+
+                    <!-- Action Button -->
+                    <a href="./storyflow/" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium text-sm transition-all border border-white/10">
+                        <span>Launch App</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- APP 5: SVG Vector Sketcher -->
+            <div class="app-card rounded-2xl p-6 flex flex-col justify-between relative group" data-category="visual" data-name="svg vector illustration drawing path canvas editor icon" data-status="planned">
+                <div>
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xl group-hover:scale-105 transition-transform">
+                            <i class="fa-solid fa-bezier-curve"></i>
+                        </div>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-500/10 text-gray-400 border border-gray-500/20">
+                            Planned
+                        </span>
+                    </div>
+
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-emerald-300 transition-colors">
+                        Vector Draft
+                    </h3>
+                    <p class="text-gray-400 text-sm mb-6 leading-relaxed">
+                        Minimalist vector illustration environment for quick icon sketching and SVG graphic generation.
+                    </p>
+                </div>
+
+                <div>
+                    <!-- Tags -->
+                    <div class="flex flex-wrap gap-1.5 mb-6">
+                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-white/5 text-gray-400 border border-white/5">SVG</span>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-white/5 text-gray-400 border border-white/5">Vectors</span>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-white/5 text-gray-400 border border-white/5">Icons</span>
+                    </div>
+
+                    <!-- Action Button -->
+                    <button disabled class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 text-gray-500 font-medium text-sm cursor-not-allowed border border-white/5">
+                        <span>Coming Soon</span>
+                        <i class="fa-solid fa-lock text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- No Search Results Fallback -->
+        <div id="no-results" class="hidden text-center py-16">
+            <div class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4 text-gray-500">
+                <i class="fa-solid fa-magnifying-glass text-lg"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-1">No matching tools found</h3>
+            <p class="text-gray-400 text-sm">Try adjusting your search terms or category filters.</p>
+        </div>
+
+    </main>
+
+    <footer class="border-t border-white/10 py-8 bg-slate-950/40 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-terminal text-indigo-500"></i>
+                <span>Hosted via GitHub Pages Monorepo</span>
+            </div>
+            <div>
+                <span>Creative Suite Workspace &bull; Built with HTML, Tailwind & Vanilla JS</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('search-input');
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const appCards = document.querySelectorAll('.app-card');
+            const noResults = document.getElementById('no-results');
+
+            let currentCategory = 'all';
+            let searchQuery = '';
+
+            function filterApps() {
+                let visibleCount = 0;
+
+                appCards.forEach(card => {
+                    const category = card.getAttribute('data-category');
+                    const searchData = card.getAttribute('data-name').toLowerCase();
+
+                    const matchesCategory = (currentCategory === 'all' || category === currentCategory);
+                    const matchesSearch = searchData.includes(searchQuery.toLowerCase());
+
+                    if (matchesCategory && matchesSearch) {
+                        card.style.display = 'flex';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                if (visibleCount === 0) {
+                    noResults.classList.remove('hidden');
+                } else {
+                    noResults.classList.add('hidden');
+                }
+            }
+
+            // Category Filter Click
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentCategory = btn.getAttribute('data-filter');
+                    filterApps();
+                });
+            });
+
+            // Search Input Event
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value.trim();
+                filterApps();
+            });
+        });
+    </script>
+</body>
+</html>
