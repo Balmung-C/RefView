@@ -186,22 +186,15 @@
       justify-content: center;
       overflow: hidden;
       background: #08090b;
-      cursor: grab;
-      user-select: none;
-    }
-
-    .pane-viewport.dragging {
-      cursor: grabbing;
     }
 
     .pane-image-wrapper {
       position: relative;
-      width: 100%;
-      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
-      pointer-events: none;
     }
 
     .pane-img {
@@ -209,12 +202,12 @@
       max-height: 100%;
       object-fit: contain;
       user-select: none;
-      transition: filter 0.2s ease;
-      transform-origin: center center;
-      will-change: transform;
+      transition: filter 0.2s ease, transform 0.2s ease;
     }
 
     .pane-img.grayscale { filter: grayscale(100%); }
+    .pane-img.flipped { transform: scaleX(-1); }
+    .pane-img.grayscale.flipped { transform: scaleX(-1); filter: grayscale(100%); }
 
     /* 3x3 Grid Overlay */
     .grid-overlay {
@@ -245,7 +238,6 @@
       font-size: 0.85rem;
       padding: 20px;
       text-align: center;
-      pointer-events: none;
     }
 
     /* TIMER PROGRESS BAR */
@@ -274,7 +266,6 @@
       align-items: center;
       justify-content: space-between;
       gap: 6px;
-      z-index: 20;
     }
 
     .tool-group {
@@ -303,16 +294,6 @@
       color: var(--accent-hover);
       background: rgba(79, 70, 229, 0.15);
       border-color: rgba(79, 70, 229, 0.3);
-    }
-
-    .zoom-badge {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      background: rgba(0, 0, 0, 0.4);
-      padding: 2px 6px;
-      border-radius: 4px;
-      border: 1px solid var(--border-color);
-      font-family: monospace;
     }
 
     /* COLLAPSIBLE BOTTOM DRAWER */
@@ -424,7 +405,7 @@
 
     <div class="header-actions">
       <button id="addPaneBtn" class="btn" onclick="addPane()">+ Add Pane</button>
-      <button class="btn" onclick="toggleDrawer()">📁 Saved Board (<span id="savedCount">0</span>)</button>
+      <button class="btn" onclick="toggleDrawer()">📁 Saved (<span id="savedCount">0</span>)</button>
     </div>
   </header>
 
@@ -434,7 +415,7 @@
   <!-- COLLAPSIBLE BOTTOM DRAWER -->
   <div id="drawer" class="drawer">
     <div class="drawer-header">
-      <span>Saved References Board (Double-click thumbnail to view in pane)</span>
+      <span>Saved References (Double-click thumbnail to view in pane)</span>
       <div class="drawer-actions">
         <button class="btn" onclick="saveBoard()" title="Save board state and saved thumbnails to a file">
           💾 Save Board
@@ -442,7 +423,7 @@
         <button class="btn" onclick="triggerLoadBoard()" title="Load a saved board file">
           📂 Load Board
         </button>
-        <button class="btn" style="color: var(--danger);" onclick="clearAllSaved()">Clear Board</button>
+        <button class="btn" style="color: var(--danger);" onclick="clearAllSaved()">Clear Saved</button>
         <button class="btn-tool" onclick="toggleDrawer()">✕ Close</button>
       </div>
     </div>
@@ -494,7 +475,7 @@
       if (savedReferences.length === 0) {
         drawerContent.innerHTML = `
           <div style="color: var(--text-muted); font-size: 0.8rem; align-self: center; margin: auto;">
-            No saved references on board. Click "➕ Add to Board" on any pane to pin references here.
+            No saved references yet. Click 💾 on any pane to save an image here.
           </div>`;
         return;
       }
@@ -515,13 +496,13 @@
       });
     }
 
-    /* ACTION 1: Add image to bottom reference board only */
-    function addToBoard(id) {
+    async function saveCurrentReference(id) {
       const state = panesData.get(id);
       if (!state || !state.images.length) return;
 
       const current = state.images[state.currentIndex];
       
+      // Save metadata to saved references list
       const exists = savedReferences.some(ref => ref.imageUrl === current.imageUrl);
       if (!exists) {
         savedReferences.push(current);
@@ -529,26 +510,7 @@
         renderSavedDrawer();
       }
 
-      // Visual feedback on the button
-      const btn = document.getElementById(`btn-add-board-${id}`);
-      if (btn) {
-        const originalText = btn.textContent;
-        btn.textContent = '✓ Added!';
-        btn.style.color = 'var(--success)';
-        setTimeout(() => {
-          btn.textContent = originalText;
-          btn.style.color = '';
-        }, 1200);
-      }
-    }
-
-    /* ACTION 2: Save/Download individual image file directly */
-    async function saveImageFile(id) {
-      const state = panesData.get(id);
-      if (!state || !state.images.length) return;
-
-      const current = state.images[state.currentIndex];
-
+      // Prompt user to pick save location for binary file download
       try {
         const response = await fetch(current.imageUrl);
         const blob = await response.blob();
@@ -568,14 +530,14 @@
           await writable.write(blob);
           await writable.close();
         } else {
+          // Fallback download trigger
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
           a.download = defaultName;
           a.click();
         }
       } catch (err) {
-        console.warn("Direct file download skipped or blocked by CORS, opening in new tab:", err);
-        window.open(current.imageUrl, '_blank');
+        console.warn("Direct file save skipped or blocked by CORS:", err);
       }
     }
 
@@ -587,7 +549,7 @@
 
     function clearAllSaved() {
       if (!savedReferences.length) return;
-      if (confirm("Are you sure you want to clear all thumbnails from the board?")) {
+      if (confirm("Are you sure you want to clear all saved thumbnails?")) {
         savedReferences = [];
         saveToLocalStorage();
         renderSavedDrawer();
@@ -606,15 +568,12 @@
           isPaused: state.isPaused,
           isGrayscale: state.isGrayscale,
           isFlipped: state.isFlipped,
-          showGrid: state.showGrid,
-          zoom: state.zoom,
-          panX: state.panX,
-          panY: state.panY
+          showGrid: state.showGrid
         });
       });
 
       const boardData = {
-        version: "1.2",
+        version: "1.0",
         timestamp: new Date().toISOString(),
         panes: activePanes,
         savedReferences: savedReferences
@@ -663,17 +622,20 @@
           const boardData = JSON.parse(e.target.result);
           if (!boardData.panes) throw new Error("Invalid Board file format");
 
+          // Clear existing workspace
           panesData.forEach((state, id) => removePane(id, true));
           panesData.clear();
           document.getElementById('workspace').innerHTML = '';
           paneCounter = 0;
 
+          // Load Saved References
           if (Array.isArray(boardData.savedReferences)) {
             savedReferences = boardData.savedReferences;
             saveToLocalStorage();
             renderSavedDrawer();
           }
 
+          // Restore Panes
           boardData.panes.forEach((pState) => {
             const paneId = addPane();
             if (paneId) {
@@ -686,9 +648,6 @@
               state.isGrayscale = pState.isGrayscale || false;
               state.isFlipped = pState.isFlipped || false;
               state.showGrid = pState.showGrid || false;
-              state.zoom = pState.zoom || 1;
-              state.panX = pState.panX || 0;
-              state.panY = pState.panY || 0;
 
               document.getElementById(`input-${paneId}`).value = state.query;
               document.getElementById(`timer-select-${paneId}`).value = state.timerSeconds;
@@ -698,7 +657,6 @@
                 if (state.isGrayscale) toggleGrayscale(paneId);
                 if (state.isFlipped) toggleFlip(paneId);
                 if (state.showGrid) toggleGrid(paneId);
-                applyTransform(paneId);
                 if (!state.isPaused && state.timerSeconds > 0) startPaneTimer(paneId);
               }
             }
@@ -710,7 +668,7 @@
         }
       };
       reader.readAsText(file);
-      event.target.value = '';
+      event.target.value = ''; // Reset input
     }
 
     function updateWorkspaceLayout() {
@@ -741,13 +699,7 @@
         isPaused: false,
         isGrayscale: false,
         isFlipped: false,
-        showGrid: false,
-        zoom: 1,
-        panX: 0,
-        panY: 0,
-        isDragging: false,
-        startX: 0,
-        startY: 0
+        showGrid: false
       };
 
       panesData.set(paneId, state);
@@ -797,100 +749,16 @@
             <button id="btn-gray-${paneId}" class="btn-tool" title="Grayscale Toggle" onclick="toggleGrayscale(${paneId})">🎨</button>
             <button id="btn-flip-${paneId}" class="btn-tool" title="Flip Horizontal" onclick="toggleFlip(${paneId})">↔</button>
             <button id="btn-grid-tool-${paneId}" class="btn-tool" title="3x3 Composition Grid" onclick="toggleGrid(${paneId})">井</button>
-            <button class="btn-tool" title="Reset Zoom & Pan" onclick="resetZoom(${paneId})">🔍</button>
-            <span id="zoom-badge-${paneId}" class="zoom-badge">100%</span>
           </div>
           <div class="tool-group">
-            <button id="btn-add-board-${paneId}" class="btn-tool" title="Add reference thumbnail to board" onclick="addToBoard(${paneId})">➕ Add to Board</button>
-            <button class="btn-tool" title="Save / Download image file" onclick="saveImageFile(${paneId})">💾 Save Image</button>
+            <button class="btn-tool" title="Save Reference" onclick="saveCurrentReference(${paneId})">💾 Save</button>
           </div>
         </div>
       `;
 
       document.getElementById('workspace').appendChild(paneEl);
-      attachZoomPanEvents(paneId);
       updateWorkspaceLayout();
       return paneId;
-    }
-
-    /* PAN & ZOOM INTERACTION HANDLERS */
-    function attachZoomPanEvents(id) {
-      const viewport = document.getElementById(`viewport-${id}`);
-      const state = panesData.get(id);
-
-      if (!viewport) return;
-
-      // Mouse Wheel Zoom
-      viewport.addEventListener('wheel', (e) => {
-        if (!state.images.length) return;
-        e.preventDefault();
-
-        const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
-        let newZoom = state.zoom * zoomFactor;
-
-        // Clamp Zoom level between 100% (1.0) and 500% (5.0)
-        newZoom = Math.min(Math.max(newZoom, 1), 5);
-
-        if (newZoom === 1) {
-          state.panX = 0;
-          state.panY = 0;
-        }
-
-        state.zoom = newZoom;
-        applyTransform(id);
-      }, { passive: false });
-
-      // Mouse Drag / Panning
-      viewport.addEventListener('mousedown', (e) => {
-        if (state.zoom <= 1 || !state.images.length) return;
-        state.isDragging = true;
-        state.startX = e.clientX - state.panX;
-        state.startY = e.clientY - state.panY;
-        viewport.classList.add('dragging');
-      });
-
-      window.addEventListener('mousemove', (e) => {
-        if (!state.isDragging) return;
-        state.panX = e.clientX - state.startX;
-        state.panY = e.clientY - state.startY;
-        applyTransform(id);
-      });
-
-      window.addEventListener('mouseup', () => {
-        if (state.isDragging) {
-          state.isDragging = false;
-          viewport.classList.remove('dragging');
-        }
-      });
-
-      // Double-Click to Reset Zoom
-      viewport.addEventListener('dblclick', () => {
-        resetZoom(id);
-      });
-    }
-
-    function applyTransform(id) {
-      const state = panesData.get(id);
-      const img = document.getElementById(`img-${id}`);
-      const badge = document.getElementById(`zoom-badge-${id}`);
-
-      if (!img) return;
-
-      const flipScale = state.isFlipped ? -1 : 1;
-      img.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom * flipScale}, ${state.zoom})`;
-
-      if (badge) {
-        badge.textContent = `${Math.round(state.zoom * 100)}%`;
-      }
-    }
-
-    function resetZoom(id) {
-      const state = panesData.get(id);
-      if (!state) return;
-      state.zoom = 1;
-      state.panX = 0;
-      state.panY = 0;
-      applyTransform(id);
     }
 
     function openSavedInNewPane(imageUrl) {
@@ -946,7 +814,6 @@
         const data = await response.json();
         if (data.images && data.images.length > 0) {
           state.images = data.images;
-          resetZoom(id);
           displayCurrentImage(id);
           startPaneTimer(id);
         } else {
@@ -978,7 +845,6 @@
       if (!state.images.length) return;
 
       state.currentIndex = (state.currentIndex + 1) % state.images.length;
-      resetZoom(id);
       displayCurrentImage(id);
       resetTimerProgress(id);
     }
@@ -1048,7 +914,7 @@
     function toggleFlip(id) {
       const state = panesData.get(id);
       state.isFlipped = !state.isFlipped;
-      applyTransform(id);
+      document.getElementById(`img-${id}`).classList.toggle('flipped', state.isFlipped);
       document.getElementById(`btn-flip-${id}`).classList.toggle('active', state.isFlipped);
     }
 
