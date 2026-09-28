@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RefView - Reference Search</title>
+  <style>
+    :root {
+      --bg-dark: #121316;
+      --bg-panel: #1a1c23;
+      --bg-card: #232630;
+      --accent: #4f46e5;
+      --accent-hover: #6366f1;
+      --border-color: #2e3340;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --success: #10b981;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      padding-bottom: 40px;
+    }
+
+    header {
+      background-color: var(--bg-panel);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .search-group {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .search-input {
+      flex: 1;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+
+    .search-input:focus {
+      outline: 1px solid var(--accent);
+    }
+
+    .btn-search {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .btn-search:hover {
+      background: var(--accent-hover);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 0 20px;
+    }
+
+    .status-banner {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .image-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .image-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+
+    .image-card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      background: var(--bg-dark);
+    }
+
+    .image-card .info {
+      padding: 10px;
+    }
+
+    .image-card .title {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+
+    .image-card .source {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">RefView</div>
+
+    <form class="search-group" onsubmit="handleSearch(event)">
+      <input type="text" id="searchInput" class="search-input" placeholder="Search references (e.g. vintage motorcycles)..." required />
+      <button type="submit" class="btn-search">Search</button>
+    </form>
+  </header>
+
+  <div class="container">
+    <div id="statusBanner" class="status-banner">
+      <span id="statusMessage">Enter a query above to perform a live search.</span>
+    </div>
+
+    <!-- Image Gallery Grid -->
+    <div id="imageContainer" class="image-grid"></div>
+  </div>
+
+  <script>
+    // Performs live search via Serverless Proxy
+    async function handleSearch(event) {
+      if (event) event.preventDefault();
+
+      const query = document.getElementById('searchInput').value.trim();
+      if (!query) return;
+
+      const statusMsg = document.getElementById('statusMessage');
+      statusMsg.textContent = `Searching for "${query}"...`;
+
+      try {
+        // Calls Netlify Serverless Proxy Function
+        const response = await fetch(`/.netlify/functions/search?q=${encodeURIComponent(query)}`);
+
+        if (!response.ok) {
+          throw new Error(`Proxy error: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.images && data.images.length > 0) {
+          renderImages(data.images);
+          statusMsg.textContent = `Found ${data.images.length} results for "${query}"`;
+        } else {
+          statusMsg.textContent = `No image results found for "${query}".`;
+          renderImages([]);
+        }
+
+      } catch (error) {
+        console.warn('Serverless proxy unavailable, checking fallback options...', error);
+        statusMsg.textContent = 'Serverless endpoint unavailable. Ensure site is deployed with configured Netlify environment variables.';
+      }
+    }
+
+    function renderImages(images) {
+      const container = document.getElementById('imageContainer');
+      container.innerHTML = '';
+
+      images.forEach(img => {
+        const card = document.createElement('div');
+        card.className = 'image-card';
+
+        card.innerHTML = `
+          <img src="${img.imageUrl}" alt="${escapeHtml(img.title || 'Reference Image')}" loading="lazy" />
+          <div class="info">
+            <div class="title">${escapeHtml(img.title || 'Untitled')}</div>
+            <div class="source">${escapeHtml(img.domain || img.source || 'web')}</div>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+  </script>
+</body>
+</html>
