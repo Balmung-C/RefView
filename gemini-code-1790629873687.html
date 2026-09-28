@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StoryView - Visual Narrative & Storyboard Planner</title>
+  <style>
+    :root {
+      --bg-dark: #0f1115;
+      --bg-panel: #161920;
+      --bg-card: #202430;
+      --accent: #4f46e5;
+      --accent-hover: #6366f1;
+      --border-color: #2a2e3d;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* HEADER */
+    header {
+      background-color: var(--bg-panel);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      flex-shrink: 0;
+      z-index: 100;
+      gap: 16px;
+    }
+
+    .brand {
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-tag {
+      font-size: 0.7rem;
+      background: rgba(79, 70, 229, 0.2);
+      color: var(--accent-hover);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(79, 70, 229, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .story-title-input {
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      width: 280px;
+    }
+
+    .story-title-input:focus {
+      outline: 1px solid var(--accent);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 6px 12px;
+      font-size: 0.82rem;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--text-muted);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .btn-portal {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--border-color);
+      color: var(--text-muted);
+    }
+
+    .btn-portal:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .mode-toggle {
+      display: flex;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 2px;
+    }
+
+    .mode-btn {
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .mode-btn.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* MAIN LAYOUT */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* TRACK 1: NARRATIVE MILESTONES */
+    .milestone-track-container {
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 18px;
+      flex-shrink: 0;
+    }
+
+    .track-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .milestone-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+    }
+
+    .milestone-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+
+    .milestone-card:hover {
+      border-color: var(--text-muted);
+    }
+
+    .milestone-card.selected {
+      border-color: var(--accent-hover);
+      background: rgba(79, 70, 229, 0.12);
+    }
+
+    .milestone-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .milestone-count {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    /* TRACK 2: SEQUENCE CARDS TRACK */
+    .sequence-track-container {
+      flex: 1;
+      padding: 18px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sequence-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .cards-scroll-area {
+      flex: 1;
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      align-items: flex-start;
+    }
+
+    /* SCENE / PANEL CARD */
+    .seq-card {
+      min-width: 340px;
+      max-width: 340px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex-shrink: 0;
+      max-height: 100%;
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+
+    .card-num {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--accent-hover);
+    }
+
+    .card-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .field-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .input-sm {
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 5px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      width: 100%;
+    }
+
+    .input-sm:focus {
+      outline: 1px solid var(--accent);
+    }
+
+    textarea.input-sm {
+      resize: vertical;
+      min-height: 50px;
+      font-family: inherit;
+    }
+
+    /* NESTED ENTITY CARDS (LOCATION & CHARACTERS) */
+    .nested-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .nested-card {
+      background: var(--bg-panel);
+      border: 1px dashed var(--border-color);
+      border-radius: 4px;
+      padding: 6px 8px;
+      font-size: 0.78rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .swatch-bar {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    .swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 3px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+    }
+
+    #fileInput {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      StoryView
+      <span class="brand-tag">Planner</span>
+    </div>
+
+    <input type="text" id="storyTitle" class="story-title-input" value="Untitled Story Arc" onchange="updateStoryTitle(this.value)" />
+
+    <div class="header-actions">
+      <!-- MODE TOGGLE (COMICS VS ANIMATION) -->
+      <div class="mode-toggle">
+        <button id="modeComics" class="mode-btn active" onclick="setMode('comics')">Comics (Panels)</button>
+        <button id="modeAnimation" class="mode-btn" onclick="setMode('animation')">Animation (Scenes)</button>
+      </div>
+
+      <button class="btn" onclick="exportStory()">💾 Save Story</button>
+      <button class="btn" onclick="triggerImport()">📂 Load Story</button>
+      <a href="../index.html" class="btn btn-portal" title="Return to Portal">🏠 Portal</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- TRACK 1: NARRATIVE MILESTONES -->
+    <div class="milestone-track-container">
+      <div class="track-label">Narrative Milestones Track (Select to filter sequence)</div>
+      <div class="milestone-grid" id="milestoneGrid"></div>
+    </div>
+
+    <!-- TRACK 2: SEQUENCE CARDS TRACK -->
+    <div class="sequence-track-container">
+      <div class="sequence-header">
+        <div class="track-label" id="sequenceTrackLabel">Sequence Track — All Scenes / Panels</div>
+        <button class="btn btn-primary" onclick="addCard()">+ Add Card</button>
+      </div>
+
+      <div class="cards-scroll-area" id="cardsScrollArea"></div>
+    </div>
+  </main>
+
+  <input type="file" id="fileInput" accept=".json" onchange="importStory(event)" />
+
+  <script>
+    const MILESTONES = [
+      { id: 'exposition', name: 'Exposition' },
+      { id: 'inciting', name: 'Inciting Incident' },
+      { id: 'rising', name: 'Rising Action' },
+      { id: 'midpoint', name: 'Midpoint' },
+      { id: 'climax', name: 'Climax' },
+      { id: 'resolution', name: 'Resolution' }
+    ];
+
+    let storyState = {
+      title: 'Untitled Story Arc',
+      mode: 'comics', // 'comics' or 'animation'
+      selectedMilestone: 'all',
+      cards: []
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderMilestones();
+      // Add default initial card
+      if (!storyState.cards.length) {
+        addCard('exposition');
+      } else {
+        renderCards();
+      }
+    });
+
+    function setMode(mode) {
+      storyState.mode = mode;
+      document.getElementById('modeComics').classList.toggle('active', mode === 'comics');
+      document.getElementById('modeAnimation').classList.toggle('active', mode === 'animation');
+      renderCards();
+    }
+
+    function updateStoryTitle(val) {
+      storyState.title = val || 'Untitled Story Arc';
+    }
+
+    function renderMilestones() {
+      const grid = document.getElementById('milestoneGrid');
+      grid.innerHTML = '';
+
+      // All option
+      const allEl = document.createElement('div');
+      allEl.className = `milestone-card ${storyState.selectedMilestone === 'all' ? 'selected' : ''}`;
+      allEl.onclick = () => selectMilestone('all');
+      allEl.innerHTML = `
+        <div class="milestone-title">All Milestones</div>
+        <div class="milestone-count">${storyState.cards.length} items</div>
+      `;
+      grid.appendChild(allEl);
+
+      MILESTONES.forEach(m => {
+        const count = storyState.cards.filter(c => c.milestone === m.id).length;
+        const card = document.createElement('div');
+        card.className = `milestone-card ${storyState.selectedMilestone === m.id ? 'selected' : ''}`;
+        card.onclick = () => selectMilestone(m.id);
+        card.innerHTML = `
+          <div class="milestone-title">${m.name}</div>
+          <div class="milestone-count">${count} items</div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function selectMilestone(id) {
+      storyState.selectedMilestone = id;
+      renderMilestones();
+      renderCards();
+    }
+
+    function addCard(milestoneId = null) {
+      const targetMilestone = milestoneId || (storyState.selectedMilestone === 'all' ? 'exposition' : storyState.selectedMilestone);
+      
+      const newCard = {
+        id: Date.now(),
+        milestone: targetMilestone,
+        trackingVal: storyState.mode === 'comics' ? 'Page 1 - Panel 1' : '00:05',
+        angleLayout: '',
+        shotDescription: '',
+        mood: '',
+        palette: ['#4f46e5', '#10b981', '#f59e0b'],
+        location: { name: '', timeOfDay: '', lighting: '' },
+        characters: [{ name: '', expression: '', action: '' }]
+      };
+
+      storyState.cards.push(newCard);
+      renderMilestones();
+      renderCards();
+    }
+
+    function deleteCard(id) {
+      storyState.cards = storyState.cards.filter(c => c.id !== id);
+      renderMilestones();
+      renderCards();
+    }
+
+    function renderCards() {
+      const area = document.getElementById('cardsScrollArea');
+      area.innerHTML = '';
+
+      const filtered = storyState.selectedMilestone === 'all' 
+        ? storyState.cards 
+        : storyState.cards.filter(c => c.milestone === storyState.selectedMilestone);
+
+      const labelText = storyState.mode === 'comics' ? 'Panels Track' : 'Scenes Track';
+      document.getElementById('sequenceTrackLabel').textContent = `Sequence Track — ${labelText} (${filtered.length})`;
+
+      filtered.forEach((card, idx) => {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'seq-card';
+
+        const milestoneOptions = MILESTONES.map(m => 
+          `<option value="${m.id}" ${card.milestone === m.id ? 'selected' : ''}>${m.name}</option>`
+        ).join('');
+
+        cardEl.innerHTML = `
+          <div class="card-top">
+            <span class="card-num">#${idx + 1} ${storyState.mode === 'comics' ? 'Panel' : 'Scene'}</span>
+            <button class="btn" style="padding: 2px 6px; color: var(--danger);" onclick="deleteCard(${card.id})">✕</button>
+          </div>
+
+          <div class="card-field">
+            <span class="field-label">Milestone Phase</span>
+            <select class="input-sm" onchange="updateCardField(${card.id}, 'milestone', this.value)">
+              ${milestoneOptions}
+            </select>
+          </div>
+
+          <div class="card-field">
+            <span class="field-label">${storyState.mode === 'comics' ? 'Page / Panel #' : 'Time / Duration'}</span>
+            <input type="text" class="input-sm" value="${card.trackingVal}" onchange="updateCardField(${card.id}, 'trackingVal', this.value)" />
+          </div>
+
+          <div class="card-field">
+            <span class="field-label">Angle / Camera Layout</span>
+            <input type="text" class="input-sm" placeholder="e.g. Low angle, OTS, Wide..." value="${card.angleLayout}" onchange="updateCardField(${card.id}, 'angleLayout', this.value)" />
+          </div>
+
+          <div class="card-field">
+            <span class="field-label">Shot / Panel Description</span>
+            <textarea class="input-sm" placeholder="Describe visual action & dialogue..." onchange="updateCardField(${card.id}, 'shotDescription', this.value)">${card.shotDescription}</textarea>
+          </div>
+
+          <div class="card-field">
+            <span class="field-label">Mood & Color Palette</span>
+            <input type="text" class="input-sm" placeholder="e.g. Tense, Melancholic..." value="${card.mood}" onchange="updateCardField(${card.id}, 'mood', this.value)" />
+            <div class="swatch-bar">
+              ${card.palette.map((color, sIdx) => `
+                <input type="color" value="${color}" class="swatch" onchange="updatePaletteColor(${card.id},${sIdx}, this.value)" />
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- NESTED LOCATION CARD -->
+          <div class="nested-section">
+            <span class="field-label">📍 Nested Location Card</span>
+            <div class="nested-card">
+              <input type="text" class="input-sm" placeholder="Location Name" value="${card.location.name}" onchange="updateNestedLoc(${card.id}, 'name', this.value)" />
+              <input type="text" class="input-sm" placeholder="Lighting / Time of Day" value="${card.location.lighting}" onchange="updateNestedLoc(${card.id}, 'lighting', this.value)" />
+            </div>
+          </div>
+
+          <!-- NESTED CHARACTER CARD -->
+          <div class="nested-section">
+            <span class="field-label">👤 Nested Character Card</span>
+            <div class="nested-card">
+              <input type="text" class="input-sm" placeholder="Character Name" value="${card.characters[0].name}" onchange="updateNestedChar(${card.id}, 'name', this.value)" />
+              <input type="text" class="input-sm" placeholder="Expression / Action" value="${card.characters[0].action}" onchange="updateNestedChar(${card.id}, 'action', this.value)" />
+            </div>
+          </div>
+        `;
+
+        area.appendChild(cardEl);
+      });
+    }
+
+    function updateCardField(id, field, val) {
+      const card = storyState.cards.find(c => c.id === id);
+      if (card) {
+        card[field] = val;
+        if (field === 'milestone') renderMilestones();
+      }
+    }
+
+    function updatePaletteColor(id, index, hex) {
+      const card = storyState.cards.find(c => c.id === id);
+      if (card) card.palette[index] = hex;
+    }
+
+    function updateNestedLoc(id, field, val) {
+      const card = storyState.cards.find(c => c.id === id);
+      if (card) card.location[field] = val;
+    }
+
+    function updateNestedChar(id, field, val) {
+      const card = storyState.cards.find(c => c.id === id);
+      if (card) card.characters[0][field] = val;
+    }
+
+    function exportStory() {
+      const json = JSON.stringify(storyState, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `storyview-${storyState.title.toLowerCase().replace(/\s+/g, '-')}.json`;
+      a.click();
+    }
+
+    function triggerImport() {
+      document.getElementById('fileInput').click();
+    }
+
+    function importStory(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const imported = JSON.parse(event.target.result);
+          if (imported.cards && imported.title) {
+            storyState = imported;
+            document.getElementById('storyTitle').value = storyState.title;
+            setMode(storyState.mode || 'comics');
+            renderMilestones();
+            renderCards();
+          }
+        } catch (err) {
+          alert('Could not parse Story file.');
+        }
+      };
+      reader.readAsText(file);
+    }
+  </script>
+</body>
+</html>
