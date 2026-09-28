@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RefView - Logo Studio & Reference Workspace</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+        }
+        .font-plus-jakarta { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-space-grotesk { font-family: 'Space Grotesk', sans-serif; }
+        .font-outfit { font-family: 'Outfit', sans-serif; }
+        .font-jetbrains { font-family: 'JetBrains Mono', monospace; }
+        .font-cinzel { font-family: 'Cinzel', serif; }
+
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(71, 85, 105, 1);
+        }
+
+        /* Subtle grid background for workspace */
+        .bg-grid-pattern {
+            background-size: 24px 24px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col overflow-hidden bg-slate-950 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Navigation Header -->
+    <header class="h-16 border-b border-slate-800/80 bg-slate-900/80 backdrop-blur-md px-4 lg:px-6 flex items-center justify-between z-30 shrink-0">
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-3">
+                <!-- App Logo Preview Dynamic Icon -->
+                <div id="headerLogoContainer" class="w-9 h-9 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                    <!-- Dynamic SVG injected via JavaScript -->
+                </div>
+                <div>
+                    <h1 id="headerLogoText" class="text-xl font-bold tracking-tight font-plus-jakarta bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
+                        RefView
+                    </h1>
+                    <p class="text-[10px] text-slate-400 font-medium tracking-wider uppercase">Logo Studio & Workspace</p>
+                </div>
+            </div>
+
+            <div class="h-5 w-px bg-slate-800 mx-2 hidden sm:block"></div>
+
+            <!-- Header Board Trigger with Modern Workspace Typography -->
+            <button id="boardToggleBtn" onclick="toggleBoardDrawer(event)" class="relative group flex items-center space-x-2 px-3.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 hover:border-slate-600 text-slate-200 transition-all shadow-sm">
+                <i data-lucide="layout-grid" class="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform"></i>
+                <!-- Modern, Larger Workspace Typography -->
+                <span class="text-sm font-semibold tracking-wide font-plus-jakarta uppercase text-slate-100">Board</span>
+                <span id="boardCountBadge" class="px-1.5 py-0.5 text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-md">8</span>
+                <i id="boardChevron" data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-200"></i>
+            </button>
+        </div>
+
+        <!-- Quick Controls Header Right -->
+        <div class="flex items-center space-x-3">
+            <div class="hidden md:flex items-center space-x-2 bg-slate-900 border border-slate-800 rounded-lg p-1">
+                <button onclick="setTab('editor')" id="tabBtnEditor" class="px-3 py-1 text-xs font-semibold rounded-md transition-all bg-indigo-600 text-white shadow">Studio</button>
+                <button onclick="setTab('mockups')" id="tabBtnMockups" class="px-3 py-1 text-xs font-semibold text-slate-400 hover:text-slate-200 rounded-md transition-all">Mockups & Brand</button>
+            </div>
+
+            <button onclick="copyCurrentSVG()" class="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+                <i data-lucide="copy" class="w-3.5 h-3.5 text-slate-400"></i>
+                <span class="hidden sm:inline">Copy SVG</span>
+            </button>
+            
+            <button onclick="downloadSVG()" class="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20 transition">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span>Export SVG</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Collapsible References Board Drawer -->
+    <div id="boardDrawer" class="hidden absolute top-16 left-0 right-0 z-40 bg-slate-900/95 border-b border-slate-800 backdrop-blur-xl shadow-2xl transition-all duration-300 max-h-[85vh] overflow-y-auto">
+        <div class="max-w-7xl mx-auto p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center space-x-2">
+                        <i data-lucide="layers" class="w-5 h-5 text-indigo-400"></i>
+                        <span>Active References Board</span>
+                    </h2>
+                    <p class="text-xs text-slate-400">Grid visualization scaled up to <span class="text-indigo-400 font-semibold">8 max panes</span> for reference comparison.</p>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <!-- Pane Size Control (Supports max 8) -->
+                    <div class="flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+                        <label for="paneCountSlider" class="text-xs font-medium text-slate-300">Pane Count:</label>
+                        <input type="range" id="paneCountSlider" min="1" max="8" value="8" oninput="updatePaneGrid(this.value)" class="w-24 accent-indigo-500 h-1.5 bg-slate-700 rounded-lg cursor-pointer">
+                        <span id="paneCountValue" class="text-xs font-bold text-indigo-300 w-4 text-center">8</span>
+                    </div>
+
+                    <button onclick="toggleBoardDrawer(event)" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dynamic Board Panes Grid (Up to 8 items) -->
+            <div id="boardGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3">
+                <!-- Javascript will inject 1-8 pane items here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Workspace Area -->
+    <div class="flex-1 flex overflow-hidden">
+        
+        <!-- Left Sidebar Controls -->
+        <aside class="w-80 border-r border-slate-800 bg-slate-900/50 flex flex-col overflow-y-auto shrink-0 p-5 space-y-6">
+            
+            <!-- Logo Mark Selector -->
+            <div>
+                <label class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 block flex items-center space-x-1.5">
+                    <i data-lucide="compass" class="w-3.5 h-3.5 text-indigo-400"></i>
+                    <span>Logo Concept Mark</span>
+                </label>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <button onclick="selectConcept('viewfinder')" id="conceptBtn-viewfinder" class="concept-btn text-left p-3 rounded-xl border border-indigo-500 bg-indigo-500/10 text-white transition flex flex-col items-center justify-center text-center space-y-2 group">
+                        <div class="w-8 h-8 rounded-lg bg-slate-800/80 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition">
+                            <i data-lucide="scan" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-xs font-semibold">Viewfinder Eye</span>
+                    </button>
+
+                    <button onclick="selectConcept('palette')" id="conceptBtn-palette" class="concept-btn text-left p-3 rounded-xl border border-slate-800 bg-slate-800/40 text-slate-400 hover:text-slate-200 transition flex flex-col items-center justify-center text-center space-y-2 group">
+                        <div class="w-8 h-8 rounded-lg bg-slate-800/80 flex items-center justify-center text-amber-400 group-hover:scale-105 transition">
+                            <i data-lucide="palette" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-xs font-semibold">Palette Eye</span>
+                    </button>
+
+                    <button onclick="selectConcept('board')" id="conceptBtn-board" class="concept-btn text-left p-3 rounded-xl border border-slate-800 bg-slate-800/40 text-slate-400 hover:text-slate-200 transition flex flex-col items-center justify-center text-center space-y-2 group">
+                        <div class="w-8 h-8 rounded-lg bg-slate-800/80 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition">
+                            <i data-lucide="grid" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-xs font-semibold">Board Layer Eye</span>
+                    </button>
+
+                    <button onclick="selectConcept('aperture')" id="conceptBtn-aperture" class="concept-btn text-left p-3 rounded-xl border border-slate-800 bg-slate-800/40 text-slate-400 hover:text-slate-200 transition flex flex-col items-center justify-center text-center space-y-2 group">
+                        <div class="w-8 h-8 rounded-lg bg-slate-800/80 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition">
+                            <i data-lucide="aperture" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-xs font-semibold">Aperture Eye</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Brand Identity Text Fields -->
+            <div class="space-y-3">
+                <label class="text-xs font-bold uppercase tracking-wider text-slate-400 block flex items-center space-x-1.5">
+                    <i data-lucide="type" class="w-3.5 h-3.5 text-indigo-400"></i>
+                    <span>Brand Typography</span>
+                </label>
+                
+                <div>
+                    <label class="text-[11px] text-slate-400 mb-1 block">Brand Name</label>
+                    <input type="text" id="brandNameInput" value="RefView" oninput="updateLogoText()" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 focus:border-indigo-500 text-sm text-slate-100 outline-none transition">
+                </div>
+
+                <div>
+                    <label class="text-[11px] text-slate-400 mb-1 block">Tagline / Subtext</label>
+                    <input type="text" id="brandTaglineInput" value="REFERENCE STUDIO" oninput="updateLogoText()" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 focus:border-indigo-500 text-sm text-slate-100 outline-none transition">
+                </div>
+
+                <div>
+                    <label class="text-[11px] text-slate-400 mb-1 block">Font Family</label>
+                    <select id="fontSelect" onchange="updateFontFamily(this.value)" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 focus:border-indigo-500 text-xs text-slate-200 outline-none transition">
+                        <option value="font-plus-jakarta">Plus Jakarta Sans (Modern Workspace)</option>
+                        <option value="font-space-grotesk">Space Grotesk (Tech/Modern)</option>
+                        <option value="font-outfit">Outfit (Clean Geometry)</option>
+                        <option value="font-jetbrains">JetBrains Mono (Developer)</option>
+                        <option value="font-cinzel">Cinzel (Luxury/Classic)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Color Palette Controls -->
+            <div class="space-y-3">
+                <label class="text-xs font-bold uppercase tracking-wider text-slate-400 block flex items-center space-x-1.5">
+                    <i data-lucide="swatch-book" class="w-3.5 h-3.5 text-indigo-400"></i>
+                    <span>Color Theme</span>
+                </label>
+
+                <!-- Color Presets -->
+                <div class="grid grid-cols-4 gap-2">
+                    <button onclick="applyColorPreset('#6366f1', '#06b6d4', '#10b981')" class="h-8 rounded-lg bg-gradient-to-r from-indigo-500 via-cyan-500 to-emerald-500 border border-white/10 hover:scale-105 transition shadow"></button>
+                    <button onclick="applyColorPreset('#f59e0b', '#ef4444', '#ec4899')" class="h-8 rounded-lg bg-gradient-to-r from-amber-500 via-red-500 to-pink-500 border border-white/10 hover:scale-105 transition shadow"></button>
+                    <button onclick="applyColorPreset('#3b82f6', '#8b5cf6', '#d946ef')" class="h-8 rounded-lg bg-gradient-to-r from-blue-500 via-purple-500 to-fuchsia-500 border border-white/10 hover:scale-105 transition shadow"></button>
+                    <button onclick="applyColorPreset('#10b981', '#14b8a6', '#06b6d4')" class="h-8 rounded-lg bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 border border-white/10 hover:scale-105 transition shadow"></button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 pt-1">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Primary</label>
+                        <input type="color" id="primaryColorInput" value="#6366f1" onchange="updateColors()" class="w-full h-8 bg-slate-950 border border-slate-800 rounded-lg cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Secondary</label>
+                        <input type="color" id="secondaryColorInput" value="#06b6d4" onchange="updateColors()" class="w-full h-8 bg-slate-950 border border-slate-800 rounded-lg cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 block mb-1">Accent</label>
+                        <input type="color" id="accentColorInput" value="#10b981" onchange="updateColors()" class="w-full h-8 bg-slate-950 border border-slate-800 rounded-lg cursor-pointer">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fine-Tuning Sliders -->
+            <div class="space-y-3">
+                <label class="text-xs font-bold uppercase tracking-wider text-slate-400 block flex items-center space-x-1.5">
+                    <i data-lucide="sliders" class="w-3.5 h-3.5 text-indigo-400"></i>
+                    <span>Logo Geometry</span>
+                </label>
+
+                <div>
+                    <div class="flex justify-between text-xs text-slate-400 mb-1">
+                        <span>Stroke Width</span>
+                        <span id="strokeVal">3.5px</span>
+                    </div>
+                    <input type="range" id="strokeSlider" min="1" max="8" step="0.5" value="3.5" oninput="updateGeometry()" class="w-full accent-indigo-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+                </div>
+
+                <div>
+                    <div class="flex justify-between text-xs text-slate-400 mb-1">
+                        <span>Aperture/Eye Curve</span>
+                        <span id="curveVal">1.0</span>
+                    </div>
+                    <input type="range" id="curveSlider" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateGeometry()" class="w-full accent-indigo-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer">
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- Center Viewport (Editor & Preview Canvas) -->
+        <main class="flex-1 bg-slate-950 flex flex-col relative overflow-hidden bg-grid-pattern">
+            
+            <!-- Workspace Mode Views -->
+            <div id="editorView" class="flex-1 flex flex-col items-center justify-center p-8 relative">
+                
+                <!-- Background Glow -->
+                <div class="absolute w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <!-- Main Canvas Preview Card -->
+                <div class="relative bg-slate-900/90 border border-slate-800 rounded-2xl p-12 shadow-2xl backdrop-blur-md flex flex-col items-center justify-center max-w-2xl w-full aspect-square sm:aspect-video transition-all">
+                    
+                    <!-- Top Canvas Info Badge -->
+                    <div class="absolute top-4 left-4 flex items-center space-x-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="text-[11px] font-mono text-slate-400 uppercase tracking-widest">Live Vector Viewport</span>
+                    </div>
+
+                    <div class="absolute top-4 right-4 flex items-center space-x-2">
+                        <span id="conceptNameTag" class="text-[11px] font-semibold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-full">
+                            Viewfinder Concept
+                        </span>
+                    </div>
+
+                    <!-- Main Dynamic Logo Render Target -->
+                    <div id="mainLogoCanvas" class="w-full max-w-md flex flex-col items-center justify-center my-auto transition-transform duration-200 hover:scale-[1.02]">
+                        <!-- Rendered dynamically -->
+                    </div>
+
+                    <!-- Bottom Canvas Actions -->
+                    <div class="absolute bottom-4 left-0 right-0 px-6 flex items-center justify-between text-xs text-slate-500">
+                        <span id="viewBoxDimension">SVG ViewBox: 0 0 400 200</span>
+                        <span class="font-mono">RefView Vector Engine v1.2</span>
+                    </div>
+                </div>
+
+                <!-- Scaled Size Tester Row (Up to 8 size cards) -->
+                <div class="mt-8 max-w-2xl w-full flex items-center justify-between bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 backdrop-blur">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Scale Matrix:</span>
+                    <div class="flex items-center space-x-6">
+                        <div class="flex flex-col items-center">
+                            <div id="scale64" class="w-16 h-16 flex items-center justify-center bg-slate-950 rounded-lg border border-slate-800 p-2"></div>
+                            <span class="text-[10px] text-slate-500 mt-1">64px</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <div id="scale48" class="w-12 h-12 flex items-center justify-center bg-slate-950 rounded-lg border border-slate-800 p-1.5"></div>
+                            <span class="text-[10px] text-slate-500 mt-1">48px</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <div id="scale32" class="w-8 h-8 flex items-center justify-center bg-slate-950 rounded-lg border border-slate-800 p-1"></div>
+                            <span class="text-[10px] text-slate-500 mt-1">32px</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <div id="scale24" class="w-6 h-6 flex items-center justify-center bg-slate-950 rounded-lg border border-slate-800 p-0.5"></div>
+                            <span class="text-[10px] text-slate-500 mt-1">24px</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mockups & Context Matrix Tab -->
+            <div id="mockupsView" class="hidden flex-1 p-8 overflow-y-auto space-y-8">
+                <div class="max-w-5xl mx-auto space-y-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Brand Context & Mockups</h2>
+                        <p class="text-xs text-slate-400">See how your RefView logo performs across app UI elements, desktop headers, and brand cards.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Desktop Header Preview -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Desktop Workspace Header</span>
+                            <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                                <div id="mockupHeaderLogo" class="flex items-center space-x-3"></div>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-20 h-6 rounded bg-slate-800"></div>
+                                    <div class="w-8 h-8 rounded-full bg-indigo-600"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- App Icon Badge Preview -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">App Launcher Icon</span>
+                            <div class="flex items-center space-x-6">
+                                <div class="w-20 h-20 rounded-2xl bg-slate-950 border border-slate-800 p-3 shadow-xl flex items-center justify-center" id="appIconDark"></div>
+                                <div class="w-20 h-20 rounded-2xl bg-white border border-slate-200 p-3 shadow-xl flex items-center justify-center" id="appIconLight"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modern Spec Sheet Card -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Color Tokens & Brand Rationale</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="colorTokenGrid">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // Core Logo Studio State
+        const state = {
+            concept: 'viewfinder', // viewfinder, palette, board, aperture
+            brandName: 'RefView',
+            brandTagline: 'REFERENCE STUDIO',
+            fontFamily: 'font-plus-jakarta',
+            primaryColor: '#6366f1',
+            secondaryColor: '#06b6d4',
+            accentColor: '#10b981',
+            strokeWidth: 3.5,
+            curveFactor: 1.0,
+            paneCount: 8,
+            boardOpen: false
+        };
+
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Global Click Listener to collapse Board Drawer when clicking outside
+        document.addEventListener('click', function (event) {
+            const drawer = document.getElementById('boardDrawer');
+            const toggleBtn = document.getElementById('boardToggleBtn');
+            
+            // If board is open, and click target is NOT inside drawer AND NOT inside toggle button
+            if (state.boardOpen) {
+                if (drawer && !drawer.contains(event.target) && toggleBtn && !toggleBtn.contains(event.target)) {
+                    closeBoardDrawer();
+                }
+            }
+        });
+
+        function toggleBoardDrawer(event) {
+            if (event) event.stopPropagation();
+            state.boardOpen = !state.boardOpen;
+            renderBoardState();
+        }
+
+        function closeBoardDrawer() {
+            state.boardOpen = false;
+            renderBoardState();
+        }
+
+        function renderBoardState() {
+            const drawer = document.getElementById('boardDrawer');
+            const chevron = document.getElementById('boardChevron');
+            
+            if (state.boardOpen) {
+                drawer.classList.remove('hidden');
+                chevron.classList.add('rotate-180');
+            } else {
+                drawer.classList.add('hidden');
+                chevron.classList.remove('rotate-180');
+            }
+        }
+
+        // Generate SVG Mark Path based on selected concept & parameters
+        function generateSVGMark(size = 80) {
+            const p = state.primaryColor;
+            const s = state.secondaryColor;
+            const a = state.accentColor;
+            const sw = state.strokeWidth;
+
+            if (state.concept === 'viewfinder') {
+                return `
+                <svg width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Outer Viewfinder Corner Crop Marks -->
+                    <path d="M15 30 V18 H30" stroke="${s}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M70 18 H85 V30" stroke="${s}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M85 70 V82 H70" stroke="${s}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M30 82 H15 V70" stroke="${s}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>
+                    
+                    <!-- Central Eye Silhouette -->
+                    <path d="M22 50 C32 32, 68 32, 78 50 C68 68, 32 68, 22 50 Z" stroke="${p}" stroke-width="${sw + 0.5}" fill="none" stroke-linejoin="round"/>
+                    
+                    <!-- Iris & Aperture Reticle -->
+                    <circle cx="50" cy="50" r="14" stroke="${a}" stroke-width="${sw}" fill="none"/>
+                    <circle cx="50" cy="50" r="6" fill="${p}"/>
+                    <circle cx="53" cy="47" r="2" fill="#FFFFFF"/>
+                </svg>`;
+            } else if (state.concept === 'palette') {
+                return `
+                <svg width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Eye Outline -->
+                    <path d="M20 50 C32 30, 68 30, 80 50 C68 70, 32 70, 20 50 Z" stroke="${p}" stroke-width="${sw}" fill="none"/>
+                    
+                    <!-- Color Swatch Nodes in Iris -->
+                    <circle cx="42" cy="46" r="8" fill="${p}" opacity="0.9"/>
+                    <circle cx="58" cy="46" r="8" fill="${s}" opacity="0.9"/>
+                    <circle cx="50" cy="58" r="8" fill="${a}" opacity="0.9"/>
+                    <circle cx="50" cy="50" r="3" fill="#FFFFFF"/>
+                </svg>`;
+            } else if (state.concept === 'board') {
+                return `
+                <svg width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Layered Board Cards forming Eye Contour -->
+                    <rect x="18" y="25" width="28" height="20" rx="3" stroke="${p}" stroke-width="${sw}" fill="none" transform="rotate(-6 32 35)"/>
+                    <rect x="54" y="25" width="28" height="20" rx="3" stroke="${s}" stroke-width="${sw}" fill="none" transform="rotate(6 68 35)"/>
+                    <rect x="22" y="55" width="28" height="20" rx="3" stroke="${a}" stroke-width="${sw}" fill="none" transform="rotate(4 36 65)"/>
+                    <rect x="50" y="55" width="28" height="20" rx="3" stroke="${p}" stroke-width="${sw}" fill="none" transform="rotate(-4 64 65)"/>
+                    
+                    <!-- Center Focus Point -->
+                    <circle cx="50" cy="50" r="10" stroke="#FFFFFF" stroke-width="${sw}" fill="${p}"/>
+                </svg>`;
+            } else {
+                // Aperture
+                return `
+                <svg width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="34" stroke="${p}" stroke-width="${sw}"/>
+                    <!-- Aperture Blades -->
+                    <path d="M50 16 L62 38" stroke="${s}" stroke-width="${sw}" stroke-linecap="round"/>
+                    <path d="M84 50 L62 62" stroke="${s}" stroke-width="${sw}" stroke-linecap="round"/>
+                    <path d="M50 84 L38 62" stroke="${s}" stroke-width="${sw}" stroke-linecap="round"/>
+                    <path d="M16 50 L38 38" stroke="${s}" stroke-width="${sw}" stroke-linecap="round"/>
+                    <circle cx="50" cy="50" r="8" fill="${a}"/>
+                </svg>`;
+            }
+        }
+
+        function generateFullLogoHTML(markSize = 64, textSize = 'text-2xl', layout = 'horizontal') {
+            const markSVG = generateSVGMark(markSize);
+            const fontClass = state.fontFamily;
+
+            if (layout === 'horizontal') {
+                return `
+                <div class="flex items-center space-x-4">
+                    <div class="shrink-0">${markSVG}</div>
+                    <div class="flex flex-col text-left">
+                        <span class="${textSize} font-bold tracking-tight ${fontClass} text-white">${state.brandName}</span>
+                        <span class="text-[10px] font-semibold tracking-widest uppercase text-slate-400 font-mono">${state.brandTagline}</span>
+                    </div>
+                </div>`;
+            } else {
+                return `
+                <div class="flex flex-col items-center text-center space-y-3">
+                    <div>${markSVG}</div>
+                    <div class="flex flex-col items-center">
+                        <span class="${textSize} font-bold tracking-tight ${fontClass} text-white">${state.brandName}</span>
+                        <span class="text-[10px] font-semibold tracking-widest uppercase text-slate-400 font-mono mt-0.5">${state.brandTagline}</span>
+                    </div>
+                </div>`;
+            }
+        }
+
+        function updatePaneGrid(val) {
+            state.paneCount = parseInt(val, 10);
+            document.getElementById('paneCountValue').innerText = state.paneCount;
+            document.getElementById('boardCountBadge').innerText = state.paneCount;
+            renderBoardPanes();
+        }
+
+        function renderBoardPanes() {
+            const grid = document.getElementById('boardGrid');
+            grid.innerHTML = '';
+
+            for (let i = 1; i <= state.paneCount; i++) {
+                const pane = document.createElement('div');
+                pane.className = "bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col items-center justify-center space-y-2 hover:border-indigo-500/50 transition group";
+                pane.innerHTML = `
+                    <div class="text-[10px] font-mono text-slate-500 w-full flex justify-between">
+                        <span>PANE 0${i}</span>
+                        <span class="text-indigo-400 font-bold">REF</span>
+                    </div>
+                    <div class="w-full h-16 flex items-center justify-center group-hover:scale-105 transition">
+                        ${generateSVGMark(36)}
+                    </div>
+                    <span class="text-[9px] font-medium text-slate-400 text-center truncate w-full">Ref_${state.concept}_0${i}</span>
+                `;
+                grid.appendChild(pane);
+            }
+        }
+
+        function renderStudio() {
+            // Main Canvas Render
+            document.getElementById('mainLogoCanvas').innerHTML = generateFullLogoHTML(88, 'text-4xl', 'vertical');
+
+            // Header Logo Icon
+            document.getElementById('headerLogoContainer').innerHTML = generateSVGMark(22);
+            document.getElementById('headerLogoText').innerText = state.brandName;
+            document.getElementById('headerLogoText').className = `text-xl font-bold tracking-tight ${state.fontFamily} bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent`;
+
+            // Scale Matrix
+            document.getElementById('scale64').innerHTML = generateSVGMark(40);
+            document.getElementById('scale48').innerHTML = generateSVGMark(30);
+            document.getElementById('scale32').innerHTML = generateSVGMark(20);
+            document.getElementById('scale24').innerHTML = generateSVGMark(16);
+
+            // Mockup Elements
+            document.getElementById('mockupHeaderLogo').innerHTML = generateFullLogoHTML(28, 'text-base', 'horizontal');
+            document.getElementById('appIconDark').innerHTML = generateSVGMark(44);
+            document.getElementById('appIconLight').innerHTML = generateSVGMark(44);
+
+            // Color Tokens Spec Sheet
+            document.getElementById('colorTokenGrid').innerHTML = `
+                <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-lg shrink-0" style="background-color: ${state.primaryColor}"></div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 uppercase font-mono block">Primary Token</span>
+                        <span class="text-xs font-bold font-mono text-white">${state.primaryColor}</span>
+                    </div>
+                </div>
+                <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-lg shrink-0" style="background-color: ${state.secondaryColor}"></div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 uppercase font-mono block">Secondary Token</span>
+                        <span class="text-xs font-bold font-mono text-white">${state.secondaryColor}</span>
+                    </div>
+                </div>
+                <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-lg shrink-0" style="background-color: ${state.accentColor}"></div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 uppercase font-mono block">Accent Token</span>
+                        <span class="text-xs font-bold font-mono text-white">${state.accentColor}</span>
+                    </div>
+                </div>
+            `;
+
+            // Concept Tag Name
+            const names = {
+                viewfinder: 'Viewfinder Concept',
+                palette: 'Palette Eye Concept',
+                board: 'Board Layer Concept',
+                aperture: 'Aperture Concept'
+            };
+            document.getElementById('conceptNameTag').innerText = names[state.concept];
+
+            renderBoardPanes();
+        }
+
+        function selectConcept(conceptKey) {
+            state.concept = conceptKey;
+            
+            document.querySelectorAll('.concept-btn').forEach(btn => {
+                btn.classList.remove('border-indigo-500', 'bg-indigo-500/10', 'text-white');
+                btn.classList.add('border-slate-800', 'bg-slate-800/40', 'text-slate-400');
+            });
+
+            const activeBtn = document.getElementById(`conceptBtn-${conceptKey}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-slate-800', 'bg-slate-800/40', 'text-slate-400');
+                activeBtn.classList.add('border-indigo-500', 'bg-indigo-500/10', 'text-white');
+            }
+
+            renderStudio();
+        }
+
+        function updateLogoText() {
+            state.brandName = document.getElementById('brandNameInput').value || 'RefView';
+            state.brandTagline = document.getElementById('brandTaglineInput').value || 'REFERENCE STUDIO';
+            renderStudio();
+        }
+
+        function updateFontFamily(fontClass) {
+            state.fontFamily = fontClass;
+            renderStudio();
+        }
+
+        function updateColors() {
+            state.primaryColor = document.getElementById('primaryColorInput').value;
+            state.secondaryColor = document.getElementById('secondaryColorInput').value;
+            state.accentColor = document.getElementById('accentColorInput').value;
+            renderStudio();
+        }
+
+        function applyColorPreset(p, s, a) {
+            state.primaryColor = p;
+            state.secondaryColor = s;
+            state.accentColor = a;
+            document.getElementById('primaryColorInput').value = p;
+            document.getElementById('secondaryColorInput').value = s;
+            document.getElementById('accentColorInput').value = a;
+            renderStudio();
+        }
+
+        function updateGeometry() {
+            state.strokeWidth = parseFloat(document.getElementById('strokeSlider').value);
+            state.curveFactor = parseFloat(document.getElementById('curveSlider').value);
+            document.getElementById('strokeVal').innerText = state.strokeWidth + 'px';
+            document.getElementById('curveVal').innerText = state.curveFactor;
+            renderStudio();
+        }
+
+        function setTab(tabName) {
+            const editorView = document.getElementById('editorView');
+            const mockupsView = document.getElementById('mockupsView');
+            const tabBtnEditor = document.getElementById('tabBtnEditor');
+            const tabBtnMockups = document.getElementById('tabBtnMockups');
+
+            if (tabName === 'editor') {
+                editorView.classList.remove('hidden');
+                mockupsView.classList.add('hidden');
+                tabBtnEditor.className = "px-3 py-1 text-xs font-semibold rounded-md transition-all bg-indigo-600 text-white shadow";
+                tabBtnMockups.className = "px-3 py-1 text-xs font-semibold text-slate-400 hover:text-slate-200 rounded-md transition-all";
+            } else {
+                editorView.classList.add('hidden');
+                mockupsView.classList.remove('hidden');
+                tabBtnMockups.className = "px-3 py-1 text-xs font-semibold rounded-md transition-all bg-indigo-600 text-white shadow";
+                tabBtnEditor.className = "px-3 py-1 text-xs font-semibold text-slate-400 hover:text-slate-200 rounded-md transition-all";
+            }
+        }
+
+        function copyCurrentSVG() {
+            const svgCode = generateSVGMark(120);
+            const textarea = document.createElement('textarea');
+            textarea.value = svgCode;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            showToast("SVG copied to clipboard!");
+        }
+
+        function downloadSVG() {
+            const svgCode = generateSVGMark(200);
+            const blob = new Blob([svgCode], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `RefView-${state.concept}-logo.svg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast("SVG file downloaded!");
+        }
+
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = "fixed bottom-6 right-6 z-50 bg-indigo-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-2 opacity-0 flex items-center space-x-2";
+            toast.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4"></i><span>${msg}</span>`;
+            document.body.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 2500);
+        }
+
+        // Initial Boot
+        window.onload = function () {
+            renderStudio();
+        };
+    </script>
+</body>
+</html>
