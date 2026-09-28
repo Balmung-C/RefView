@@ -500,7 +500,7 @@
   <div id="toast" class="toast">Saved to Google Drive!</div>
 
   <script>
-    const SERPER_API_KEY = "01756b225fffbcea0dcd48e53821bede871afe5e";
+    const SERPER_API_KEY = "YOUR_SERPER_API_KEY";
 
     // --- SAFETY NET CONSTANTS & CACHE ---
     const API_MAX_SESSION_CALLS = 20; // Hard cap on total calls per browser session
