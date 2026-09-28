@@ -1,14 +1,27 @@
-const fetch = require('node-fetch');
+// netlify/functions/search.js
 
 exports.handler = async (event) => {
-  // 1. Grab parameters or set defaults
+  // Handle CORS preflight requests
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+      },
+      body: ''
+    };
+  }
+
+  // Grab query parameter
   const query = event.queryStringParameters.q || '';
   const SERPER_KEY = process.env.SERPER_API_KEY;
 
   if (!query) {
     return {
       statusCode: 400,
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       },
@@ -16,7 +29,18 @@ exports.handler = async (event) => {
     };
   }
 
-  // 2. Fetch 8 pages in parallel (~96-100 total images)
+  if (!SERPER_KEY) {
+    return {
+      statusCode: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({ error: 'SERPER_API_KEY environment variable is not set in Netlify.' })
+    };
+  }
+
+  // Fetch 8 pages concurrently using native Node.js fetch
   const pageNumbers = [1, 2, 3, 4, 5, 6, 7, 8];
 
   try {
@@ -36,7 +60,7 @@ exports.handler = async (event) => {
 
     const responses = await Promise.all(fetchPromises);
 
-    // 3. Aggregate images across all page responses
+    // Aggregate images across all fetched pages
     let rawImages = [];
     responses.forEach(data => {
       if (data && Array.isArray(data.images)) {
@@ -44,7 +68,7 @@ exports.handler = async (event) => {
       }
     });
 
-    // 4. Deduplicate items by image URL
+    // Deduplicate images by URL
     const seenUrls = new Set();
     const uniqueImages = rawImages.filter(item => {
       const url = item.imageUrl || item.thumbnailUrl;
@@ -53,7 +77,7 @@ exports.handler = async (event) => {
       return true;
     });
 
-    // 5. Format payload for your frontend
+    // Match exact Serper output schema so frontend parsers don't fail
     return {
       statusCode: 200,
       headers: {
@@ -61,7 +85,11 @@ exports.handler = async (event) => {
         'Access-Control-Allow-Origin': '*'
       },
       body: JSON.stringify({
-        count: uniqueImages.length,
+        searchParameters: {
+          q: query,
+          type: 'images',
+          engine: 'google'
+        },
         images: uniqueImages
       })
     };
@@ -69,7 +97,7 @@ exports.handler = async (event) => {
   } catch (err) {
     return {
       statusCode: 500,
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       },
