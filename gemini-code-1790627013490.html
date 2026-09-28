@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RefView - Art Reference Portal & Launcher</title>
+  <style>
+    :root {
+      --bg-dark: #0f1115;
+      --bg-panel: #161920;
+      --bg-card: #202430;
+      --accent: #4f46e5;
+      --accent-hover: #6366f1;
+      --border-color: #2a2e3d;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --max-width: 1100px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.6;
+    }
+
+    /* HEADER */
+    header {
+      background-color: var(--bg-panel);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-tag {
+      font-size: 0.7rem;
+      background: rgba(79, 70, 229, 0.2);
+      color: var(--accent-hover);
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(79, 70, 229, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--text-muted);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+
+    /* HERO SECTION */
+    .hero {
+      max-width: var(--max-width);
+      margin: 40px auto 20px;
+      padding: 0 24px;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #fff 0%, var(--text-muted) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto 24px;
+    }
+
+    .hero-cta {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    /* MAIN CONTAINER */
+    .container {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px 60px;
+      width: 100%;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card h2 {
+      font-size: 1.2rem;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      flex: 1;
+    }
+
+    .feature-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    .feature-list li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feature-list li::before {
+      content: "✓";
+      color: var(--success);
+      font-weight: bold;
+    }
+
+    /* QUICK LOAD BOARD SECTION */
+    .drop-zone {
+      border: 2px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 30px;
+      text-align: center;
+      background: rgba(22, 25, 32, 0.5);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 40px;
+    }
+
+    .drop-zone:hover {
+      border-color: var(--accent);
+      background: rgba(79, 70, 229, 0.05);
+    }
+
+    .drop-zone p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    /* FOOTER */
+    footer {
+      margin-top: auto;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border-color);
+      padding: 24px;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      RefView
+      <span class="brand-tag">Portal</span>
+    </div>
+    <div>
+      <a href="./app/index.html" class="btn btn-primary">🚀 Launch App</a>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="hero">
+    <h1>Art Reference Manager</h1>
+    <p>Accelerate your visual studies with multi-pane reference displays, automated practice timers, integrated color extraction, and saved reference boards.</p>
+    <div class="hero-cta">
+      <a href="./app/index.html" class="btn btn-primary" style="font-size: 1rem; padding: 10px 24px;">
+        Open RefView Workspace
+      </a>
+      <button class="btn" onclick="document.getElementById('fileInput').click()">
+        📂 Quick-Load Saved Board
+      </button>
+    </div>
+  </section>
+
+  <!-- MAIN CONTENT -->
+  <main class="container">
+
+    <!-- DRAG AND DROP QUICK BOARD LAUNCH -->
+    <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+      <p><strong>Have a saved RefView Board file (.json)?</strong></p>
+      <p style="font-size: 0.85rem; margin-top: 4px;">Click here or drop your board file to launch directly into the workspace.</p>
+      <input type="file" id="fileInput" accept=".json" onchange="handleBoardLaunch(event)" />
+    </div>
+
+    <!-- FEATURES OVERVIEW -->
+    <div class="grid">
+      <div class="card">
+        <h2>🖼️ Dynamic Multi-Pane Layouts</h2>
+        <p>Organize up to 8 independent workspace panes simultaneously with adaptive CSS Grid layouts optimized for comparative reference studies.</p>
+        <ul class="feature-list">
+          <li>Supports 1 to 8 customizable panes</li>
+          <li>Independent timers (15s, 30s, 1m, 3m)</li>
+          <li>Fisher-Yates non-repeating randomization</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>🎨 Real-Time Color Analysis</h2>
+        <p>Extract color palettes directly from active reference images using built-in canvas color sampling.</p>
+        <ul class="feature-list">
+          <li>40-swatch palette with 1-click hex copy</li>
+          <li>Categorized hue percentage distribution</li>
+          <li>Top-3 complementary accent generator</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>📐 Canvas Tools & Controls</h2>
+        <p>Fine-tune reference viewports with dedicated artist manipulation tools per pane.</p>
+        <ul class="feature-list">
+          <li>Grayscale & horizontal flip toggles</li>
+          <li>3x3 composition grid overlays</li>
+          <li>Smooth wheel zoom & pan interactions</li>
+        </ul>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>RefView — Web-Based Art Reference Workspace</p>
+  </footer>
+
+  <script>
+    function handleBoardLaunch(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const content = e.target.result;
+          // Store loaded file contents in sessionStorage so app workspace can pick it up on initialization
+          sessionStorage.setItem('refview_pending_board', content);
+          window.location.href = './app/index.html';
+        } catch (err) {
+          alert('Failed to read board file.');
+        }
+      };
+      reader.readAsText(file);
+    }
+  </script>
+
+  <!-- APP CHANGELOG HISTORY (NON-EXECUTABLE DATA BLOCK) -->
+  <script type="text/plain" id="refview-changelogs">
+    ====================================================================
+    REFVIEW PROJECT CHANGELOG HISTORY
+    ====================================================================
+
+    v1.0.0 — Initial Release
+    ------------------------
+    - Multi-pane workspace layout supporting responsive CSS Grid.
+    - Basic search integration via Netlify serverless proxy.
+    - Image viewing capabilities with basic navigation controls (next/prev).
+    - Image timers for practice sessions.
+
+    v1.1.0 — Image Manipulations & Controls
+    --------------------------------------
+    - Added grayscale mode toggle per pane.
+    - Added horizontal flipping (mirroring) per pane.
+    - Added 3x3 compositional rule-of-thirds grid overlay.
+    - Implemented image zoom and pan features with mouse wheel and drag interactions.
+
+    v1.2.0 — Predictive Text & Search Suggestions
+    ---------------------------------------------
+    - Built-in dictionary containing art reference categories (Poses, Animals, Anatomy, Sci-Fi, etc.).
+    - Interactive dropdown suggestions supporting keyboard navigation (Up/Down/Enter/Escape).
+
+    v1.3.0 — Saved References Board & Storage
+    -----------------------------------------
+    - Collapsible bottom drawer for pinning reference images.
+    - LocalStorage persistence for saved board items.
+    - Direct double-click thumbnail opening into new workspace panes.
+
+    v1.4.0 — Board File Operations
+    ------------------------------
+    - Export active workspace layout and pinned references to `.json` board files.
+    - Import saved board files with state restoration.
+
+    v1.5.0 — UI/UX Refinements
+    --------------------------
+    - Auto-hiding header and footer toolbars on hover for active panes.
+    - Smooth UI transitions and improved empty state feedback.
+
+    v1.6.0 — Default Image Randomization
+    ------------------------------------
+    - Removed shuffle toggle button (`🔀`).
+    - Enabled default Fisher-Yates array shuffling upon search result retrieval.
+    - Non-repeating random selection when clicking next image.
+
+    v1.6.1 — Codebase Documentation
+    -------------------------------
+    - Appended complete historical changelogs into embedded non-executable script tag.
+
+    v1.7.0 — Automatic Error Handling & Auto-Skip
+    ---------------------------------------------
+    - Added `onerror` event listener to `<img>` tags (`handleImageError`).
+    - Automatically purges broken or 403 HTTP forbidden URLs from active image array and advances to next valid image seamlessly.
+
+    v1.8.0 — Global Fresh Board Search
+    ----------------------------------
+    - Added interactive top bar message: "Want to start fresh? Click to search all panes".
+    - Toggles to a global search bar upon click.
+    - Prompts confirmation regarding unsaved changes before execution.
+    - Fetches 30 pages of results, clears existing workspace, opens 8 panes set to 30-second timers, and updates input placeholders to "Board Search - <Query>".
+
+    v1.9.0 — Integrated Color Analysis Panel
+    ---------------------------------------
+    - Integrated right-side sliding Tools panel activated via edge hover or click-lock.
+    - Real-time sampling of active reference images using canvas extraction.
+    - 40-color swatch grid generation with 1-click clipboard copy and bulk hex export.
+    - Categorized hue distribution percentage bars and top-3 color complementary gradient breakdowns.
+
+    v2.0.0 — Navigation Enhancements
+    --------------------------------
+    - Added "Return to Portal" navigation button in the top right header action menu.
+
+    v2.1.0 — Architecture & Routing URL Alignment
+    ---------------------------------------------
+    - Updated "Return to Portal" navigation link to relative path (`../index.html`) for seamless workspace exit to launcher portal[cite: 4].
+    - Standardized single-pane (`handlePaneSearch`) and global-board (`handleGlobalBoardSearch`) search fetch URLs to root endpoint `/api/search`[cite: 4].
+    - Optimized network routing compatibility with `netlify.toml` proxy redirects[cite: 4].
+  </script>
+
+</body>
+</html>
