@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RefView - Reference Photo Workspace</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'dark-bg': '#121316',
+            'panel-bg': '#1a1c23',
+            'card-bg': '#232630',
+            'accent': '#4f46e5',
+            'accent-hover': '#6366f1',
+            'border-subtle': '#2e3340',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #121316;
+      color: #f3f4f6;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #121316;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2e3340;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #4f46e5;
+    }
+
+    /* Image Modifiers */
+    .img-grayscale {
+      filter: grayscale(100%);
+    }
+    .img-flip {
+      transform: scaleX(-1);
+    }
+    .img-grayscale.img-flip {
+      transform: scaleX(-1);
+      filter: grayscale(100%);
+    }
+
+    /* 3x3 Grid Overlay */
+    .grid-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      z-index: 10;
+    }
+    .grid-overlay > div {
+      border: 1px dashed rgba(255, 255, 255, 0.25);
+    }
+
+    /* Smooth Progress Bar Transitions */
+    .timer-progress {
+      transition: width 0.1s linear;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between select-none">
+
+  <!-- HEADER -->
+  <header class="bg-panel-bg border-b border-border-subtle h-14 px-4 flex items-center justify-between sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-accent text-white font-bold text-lg shadow-md shadow-indigo-900/40">
+        R
+      </div>
+      <h1 class="font-bold text-lg tracking-tight">RefView</h1>
+    </div>
+
+    <!-- Layout Grid Selector -->
+    <div class="flex items-center gap-1 bg-dark-bg p-1 rounded-lg border border-border-subtle">
+      <button onclick="setLayout(1)" class="layout-btn text-xs px-2 py-1 rounded text-gray-400 hover:text-white hover:bg-panel-bg transition-all" title="1 Pane">1</button>
+      <button onclick="setLayout(2)" class="layout-btn text-xs px-2 py-1 rounded text-gray-400 hover:text-white hover:bg-panel-bg transition-all" title="2 Panes">2</button>
+      <button onclick="setLayout(4)" class="layout-btn text-xs px-2 py-1 rounded text-gray-400 hover:text-white hover:bg-panel-bg transition-all" title="4 Panes">4</button>
+      <button onclick="setLayout(6)" class="layout-btn text-xs px-2 py-1 rounded text-gray-400 hover:text-white hover:bg-panel-bg transition-all" title="6 Panes">6</button>
+      <div class="h-4 w-px bg-border-subtle mx-0.5"></div>
+      <button onclick="addPane()" class="text-xs px-2 py-1 rounded text-accent hover:bg-accent/10 transition-all font-semibold flex items-center gap-1">
+        <i class="fa-solid fa-plus text-[10px]"></i> Add Pane
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 p-4 pb-28">
+    <!-- Status Notification Bar -->
+    <div id="statusNotification" class="bg-panel-bg border border-border-subtle text-xs text-gray-400 px-3 py-2 rounded-md mb-4 flex items-center justify-between">
+      <span id="statusMessage" class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+        Workspace active. Real-time proxy endpoint connected (Fallback mock active if endpoint unreachable).
+      </span>
+      <span class="text-[11px] text-gray-500">Tap image to Pause/Resume</span>
+    </div>
+
+    <!-- Dynamic Grid Viewport -->
+    <div id="panesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+      <!-- Panes rendered dynamically via JS -->
+    </div>
+  </main>
+
+  <!-- BOTTOM DRAWER / GALLERY -->
+  <div id="bottomDrawer" class="fixed bottom-0 left-0 right-0 bg-panel-bg border-t border-border-subtle transition-all duration-300 z-40 shadow-2xl">
+    <!-- Drawer Toggle Header -->
+    <div class="h-9 px-4 flex items-center justify-between border-b border-border-subtle/50 cursor-pointer hover:bg-card-bg/50 transition-colors" onclick="toggleDrawer()">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-box-archive text-accent text-xs"></i>
+        <span class="text-xs font-semibold text-gray-200 uppercase tracking-wider">Saved Reference Drive</span>
+        <span id="savedCountBadge" class="bg-dark-bg border border-border-subtle text-[10px] text-accent px-1.5 py-0.5 rounded-full font-mono">0</span>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-gray-400">
+        <span id="drawerHint" class="text-[11px] hidden sm:inline text-gray-500">Click saved item to inspect in Pane 1</span>
+        <i id="drawerChevron" class="fa-solid fa-chevron-up transition-transform duration-300"></i>
+      </div>
+    </div>
+
+    <!-- Drawer Content -->
+    <div id="drawerContent" class="h-44 p-3 overflow-x-auto flex gap-3 items-center">
+      <!-- Saved Items Rendered Here -->
+      <div id="emptyDrawerMsg" class="w-full text-center py-6 text-gray-500 text-xs flex flex-col items-center gap-1">
+        <i class="fa-regular fa-bookmark text-lg mb-1"></i>
+        No saved references yet. Click <i class="fa-solid fa-bookmark inline text-accent"></i> on any pane to save images here.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global Application State
+    let state = {
+      panes: [],
+      savedReferences: [],
+      drawerOpen: false,
+      nextPaneId: 1,
+      apiProxyUrl: '/.netlify/functions/search'
+    };
+
+    // Default Seed Topics for Dynamic Fallback Mocking
+    const fallbackSeedKeywords = [
+      "human anatomy sketch", "cyberpunk street neon", "portrait lighting chiaroscuro",
+      "fantasy creature concept", "dramatic architecture composition", "landscape environmental study"
+    ];
+
+    // Initialize App
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSavedFromStorage();
+      // Start with 2 default panes
+      addPane("Anatomy Gesture");
+      addPane("Lighting Reference");
+      startGlobalTimer();
+      updateDrawerUI();
+    });
+
+    // --- PANE MANAGEMENT ---
+
+    function addPane(initialQuery = "") {
+      const paneId = state.nextPaneId++;
+      const query = initialQuery || fallbackSeedKeywords[Math.floor(Math.random() * fallbackSeedKeywords.length)];
+
+      const pane = {
+        id: paneId,
+        query: query,
+        images: [],
+        currentIndex: 0,
+        timerDuration: 30, // seconds
+        timerElapsed: 0,   // seconds
+        paused: false,
+        grayscale: false,
+        flip: false,
+        grid: false,
+        loading: false
+      };
+
+      state.panes.push(pane);
+      renderPanesGrid();
+      fetchPaneImages(paneId, query);
+    }
+
+    function removePane(id) {
+      if (state.panes.length <= 1) {
+        showStatus("At least one reference pane must remain active.");
+        return;
+      }
+      state.panes = state.panes.filter(p => p.id !== id);
+      renderPanesGrid();
+    }
+
+    function setLayout(count) {
+      // Adjust array size to target count
+      while (state.panes.length < count) {
+        const query = fallbackSeedKeywords[state.panes.length % fallbackSeedKeywords.length];
+        state.panes.push({
+          id: state.nextPaneId++,
+          query: query,
+          images: [],
+          currentIndex: 0,
+          timerDuration: 30,
+          timerElapsed: 0,
+          paused: false,
+          grayscale: false,
+          flip: false,
+          grid: false,
+          loading: false
+        });
+      }
+      if (state.panes.length > count) {
+        state.panes = state.panes.slice(0, count);
+      }
+
+      // Update grid CSS
+      const grid = document.getElementById('panesGrid');
+      if (count === 1) grid.className = "grid grid-cols-1 gap-4";
+      else if (count === 2) grid.className = "grid grid-cols-1 md:grid-cols-2 gap-4";
+      else if (count === 4) grid.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4";
+      else grid.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4";
+
+      renderPanesGrid();
+      state.panes.forEach(p => {
+        if (p.images.length === 0) fetchPaneImages(p.id, p.query);
+      });
+    }
+
+    // --- API & SEARCH HANDLERS ---
+
+    async function fetchPaneImages(paneId, query) {
+      const pane = state.panes.find(p => p.id === paneId);
+      if (!pane) return;
+
+      pane.loading = true;
+      pane.query = query;
+      updatePaneCardUI(paneId);
+
+      try {
+        // Try calling serverless function endpoint
+        const response = await fetch(`${state.apiProxyUrl}?q=${encodeURIComponent(query)}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.images && data.images.length > 0) {
+            pane.images = data.images.map(img => ({
+              url: img.imageUrl || img.link,
+              title: img.title || query,
+              source: img.domain || 'Serper Web'
+            }));
+          } else {
+            useFallbackImages(pane, query);
+          }
+        } else {
+          useFallbackImages(pane, query);
+        }
+      } catch (err) {
+        // Fallback gracefully when running locally without backend
+        useFallbackImages(pane, query);
+      } finally {
+        pane.loading = false;
+        pane.currentIndex = 0;
+        pane.timerElapsed = 0;
+        updatePaneCardUI(paneId);
+      }
+    }
+
+    function useFallbackImages(pane, query) {
+      // High quality curated placeholder images using query seed
+      const seed = encodeURIComponent(query);
+      pane.images = [
+        { url: `https://picsum.photos/seed/${seed}-1/800/600`, title: `${query} Ref #1`, source: 'Picsum' },
+        { url: `https://picsum.photos/seed/${seed}-2/800/600`, title: `${query} Ref #2`, source: 'Picsum' },
+        { url: `https://picsum.photos/seed/${seed}-3/800/600`, title: `${query} Ref #3`, source: 'Picsum' },
+        { url: `https://picsum.photos/seed/${seed}-4/800/600`, title: `${query} Ref #4`, source: 'Picsum' },
+      ];
+    }
+
+    function handlePaneSearch(event, paneId) {
+      event.preventDefault();
+      const input = document.getElementById(`pane-search-${paneId}`);
+      if (!input) return;
+      const val = input.value.trim();
+      if (val) {
+        fetchPaneImages(paneId, val);
+      }
+    }
+
+    // --- ROTATION & CONTROLS ---
+
+    function startGlobalTimer() {
+      setInterval(() => {
+        state.panes.forEach(pane => {
+          if (!pane.paused && pane.images.length > 0 && !pane.loading) {
+            pane.timerElapsed += 0.5;
+            if (pane.timerElapsed >= pane.timerDuration) {
+              nextPaneImage(pane.id);
+            } else {
+              updateProgressUI(pane.id);
+            }
+          }
+        });
+      }, 500);
+    }
+
+    function nextPaneImage(paneId) {
+      const pane = state.panes.find(p => p.id === paneId);
+      if (!pane || pane.images.length === 0) return;
+      pane.currentIndex = (pane.currentIndex + 1) % pane.images.length;
+      pane.timerElapsed = 0;
+      updatePaneCardUI(paneId);
+    }
+
+    function prevPaneImage(paneId) {
+      const pane = state.panes.find(p => p.id === paneId);
+      if (!pane || pane.images.length === 0) return;
+      pane.currentIndex = (pane.currentIndex - 1 + pane.images.length) % pane.images.length;
+      pane.timerElapsed = 0;
+      updatePaneCardUI(paneId);
+    }
+
+    function togglePause(paneId) {
+      const pane = state.panes.find(p => p.id === paneId);
+      if (!pane) return;
+      pane.paused = !pane.paused;
+      updatePaneCardUI(paneId);
+    }
+
+    function adjustTimer(paneId, delta) {
+      const pane = state.panes.find(p => p.id === paneId);
+      if (!pane) return;
+      pane.timerDuration = Math.max(5, pane.timerDuration + delta);
+      pane.timerElapsed = 0;
+      updatePaneCardUI(paneId);
+    }
+
+    function toggleGrayscale(paneId) {
+      const pane = state.panes.find(p => p.id === paneId);
+      if (!pane) return;
+      pane.grayscale = !pane.grayscale;
+      updatePaneCardUI(paneId);
+    }
+
+    function toggleFlip(paneId) {
+      const pane = state.panes.find(p => p.id === paneId);
+      if (!pane) return;
+      pane.flip = !pane.flip;
+      updatePaneCardUI(paneId);
+    }
+
+    function toggleGrid(paneId) {
+      const pane = state.panes.find(p => p.id === paneId);
+      if (!pane) return;
+      pane.grid = !pane.grid;
+      updatePaneCardUI(paneId);
+    }
+
+    // --- STORAGE & BOTTOM DRAWER ---
+
+    function saveCurrentToDrawer(paneId) {
+      const pane = state.panes.find(p => p.id === paneId);
+      if (!pane || pane.images.length === 0) return;
+
+      const currentImg = pane.images[pane.currentIndex];
+      const exists = state.savedReferences.some(item => item.url === currentImg.url);
+
+      if (exists) {
+        showStatus("Image already saved in Reference Drive.");
+        return;
+      }
+
+      const newItem = {
+        id: Date.now(),
+        url: currentImg.url,
+        title: currentImg.title || pane.query,
+        source: currentImg.source || 'Web',
+        queryGroup: pane.query
+      };
+
+      state.savedReferences.unshift(newItem);
+      saveToLocalStorage();
+      updateDrawerUI();
+      showStatus(`Saved "${newItem.title}" to Reference Drive.`);
+    }
+
+    function removeFromDrawer(itemId) {
+      state.savedReferences = state.savedReferences.filter(item => item.id !== itemId);
+      saveToLocalStorage();
+      updateDrawerUI();
+    }
+
+    function loadSavedToPane1(url, title) {
+      if (state.panes.length === 0) return;
+      const pane1 = state.panes[0];
+      pane1.images.unshift({ url, title, source: 'Saved Drive' });
+      pane1.currentIndex = 0;
+      pane1.timerElapsed = 0;
+      updatePaneCardUI(pane1.id);
+      showStatus(`Loaded "${title}" into Pane 1`);
+    }
+
+    function toggleDrawer() {
+      state.drawerOpen = !state.drawerOpen;
+      const drawer = document.getElementById('bottomDrawer');
+      const chevron = document.getElementById('drawerChevron');
+      
+      if (state.drawerOpen) {
+        drawer.style.transform = 'translateY(0)';
+        chevron.className = 'fa-solid fa-chevron-down';
+      } else {
+        drawer.style.transform = 'translateY(calc(100% - 36px))';
+        chevron.className = 'fa-solid fa-chevron-up';
+      }
+    }
+
+    function loadSavedFromStorage() {
+      try {
+        const stored = localStorage.getItem('refview_saved_drive');
+        if (stored) {
+          state.savedReferences = JSON.parse(stored);
+        }
+      } catch (e) {
+        console.warn('Could not read from localStorage', e);
+      }
+    }
+
+    function saveToLocalStorage() {
+      try {
+        localStorage.setItem('refview_saved_drive', JSON.stringify(state.savedReferences));
+      } catch (e) {
+        console.warn('Could not write to localStorage', e);
+      }
+    }
+
+    function showStatus(msg) {
+      const el = document.getElementById('statusMessage');
+      if (el) {
+        el.innerHTML = `<span class="w-2 h-2 rounded-full bg-accent inline-block animate-ping"></span> ${msg}`;
+        setTimeout(() => {
+          el.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> Workspace active. Real-time search proxy configured.`;
+        }, 4000);
+      }
+    }
+
+    // --- DOM RENDERING ENGINE ---
+
+    function renderPanesGrid() {
+      const container = document.getElementById('panesGrid');
+      container.innerHTML = state.panes.map(pane => createPaneCardHTML(pane)).join('');
+    }
+
+    function createPaneCardHTML(pane) {
+      const currentImg = pane.images[pane.currentIndex] || null;
+      const progressPercent = (pane.timerElapsed / pane.timerDuration) * 100;
+
+      return `
+        <div id="pane-card-${pane.id}" class="bg-card-bg border border-border-subtle rounded-xl overflow-hidden flex flex-col shadow-lg transition-all duration-200 hover:border-accent/50">
+          
+          <!-- Pane Top Bar / Search -->
+          <div class="p-2.5 bg-panel-bg border-b border-border-subtle flex items-center justify-between gap-2">
+            <form onsubmit="handlePaneSearch(event, ${pane.id})" class="flex items-center gap-1.5 flex-1 min-w-0">
+              <input 
+                type="text" 
+                id="pane-search-${pane.id}"
+                value="${escapeHtml(pane.query)}" 
+                placeholder="Search topic..." 
+                class="w-full bg-dark-bg border border-border-subtle text-xs text-gray-200 px-2.5 py-1 rounded focus:outline-none focus:border-accent"
+              />
+              <button type="submit" class="bg-dark-bg border border-border-subtle hover:border-accent text-gray-300 text-xs p-1.5 rounded transition-colors" title="Search Topic">
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </button>
+            </form>
+
+            <div class="flex items-center gap-1">
+              <!-- Timer Controls -->
+              <div class="flex items-center bg-dark-bg border border-border-subtle rounded px-1.5 py-0.5 text-[11px] text-gray-300">
+                <button onclick="adjustTimer(${pane.id}, -15)" class="hover:text-accent px-1">-15s</button>
+                <span class="font-mono text-accent font-semibold px-1">${pane.timerDuration}s</span>
+                <button onclick="adjustTimer(${pane.id}, 15)" class="hover:text-accent px-1">+15s</button>
+              </div>
+
+              <button onclick="nextPaneImage(${pane.id})" class="bg-dark-bg border border-border-subtle hover:border-accent text-gray-300 text-xs px-2 py-1 rounded transition-colors" title="Next Image">
+                <i class="fa-solid fa-forward"></i>
+              </button>
+
+              <button onclick="removePane(${pane.id})" class="text-gray-500 hover:text-rose-400 text-xs p-1 rounded transition-colors" title="Close Pane">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Main Image Canvas Box -->
+          <div class="relative bg-dark-bg h-72 sm:h-80 flex items-center justify-center overflow-hidden cursor-pointer group" onclick="togglePause(${pane.id})">
+            ${pane.loading ? `
+              <div class="flex flex-col items-center gap-2 text-gray-400 text-xs">
+                <i class="fa-solid fa-circle-notch animate-spin text-accent text-xl"></i>
+                <span>Fetching reference photos...</span>
+              </div>
+            ` : currentImg ? `
+              <img 
+                src="${currentImg.url}" 
+                alt="${escapeHtml(currentImg.title)}" 
+                class="max-h-full max-w-full object-contain transition-all duration-300 ${pane.grayscale ? 'img-grayscale' : ''} ${pane.flip ? 'img-flip' : ''}"
+                onerror="this.src='https://placehold.co/800x600/1a1c23/9ca3af?text=Reference+Load+Error'"
+              />
+            ` : `
+              <div class="text-xs text-gray-500">No images available</div>
+            `}
+
+            <!-- 3x3 Grid Overlay -->
+            ${pane.grid ? `
+              <div class="grid-overlay">
+                <div></div><div></div><div></div>
+                <div></div><div></div><div></div>
+                <div></div><div></div><div></div>
+              </div>
+            ` : ''}
+
+            <!-- Paused Badge Overlay -->
+            ${pane.paused ? `
+              <div class="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center">
+                <div class="bg-panel-bg/90 border border-border-subtle px-3 py-1.5 rounded-full text-xs text-accent font-semibold flex items-center gap-2 shadow-lg">
+                  <i class="fa-solid fa-pause"></i> PAUSED
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Image Info Tag -->
+            ${currentImg ? `
+              <div class="absolute bottom-2 left-2 bg-black/70 backdrop-blur-md border border-white/10 px-2 py-1 rounded text-[10px] text-gray-300 max-w-[70%] truncate opacity-80 group-hover:opacity-100 transition-opacity">
+                ${escapeHtml(currentImg.title)}
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Image Modification Toolbar -->
+          <div class="p-2 bg-panel-bg border-t border-border-subtle flex items-center justify-between text-xs">
+            <div class="flex items-center gap-1">
+              <button onclick="toggleGrayscale(${pane.id})" class="px-2 py-1 rounded border ${pane.grayscale ? 'bg-accent border-accent text-white' : 'bg-dark-bg border-border-subtle text-gray-400 hover:text-white'}" title="Toggle Grayscale">
+                <i class="fa-solid fa-circle-half-stroke"></i> B&W
+              </button>
+              <button onclick="toggleFlip(${pane.id})" class="px-2 py-1 rounded border ${pane.flip ? 'bg-accent border-accent text-white' : 'bg-dark-bg border-border-subtle text-gray-400 hover:text-white'}" title="Flip Horizontal">
+                <i class="fa-solid fa-arrows-left-right"></i> Flip
+              </button>
+              <button onclick="toggleGrid(${pane.id})" class="px-2 py-1 rounded border ${pane.grid ? 'bg-accent border-accent text-white' : 'bg-dark-bg border-border-subtle text-gray-400 hover:text-white'}" title="Toggle 3x3 Composition Grid">
+                <i class="fa-solid fa-table-cells"></i> 3x3
+              </button>
+            </div>
+
+            <button onclick="saveCurrentToDrawer(${pane.id})" class="bg-dark-bg border border-border-subtle hover:border-accent text-accent px-2.5 py-1 rounded flex items-center gap-1.5 transition-colors text-xs font-medium">
+              <i class="fa-solid fa-bookmark"></i> Save
+            </button>
+          </div>
+
+          <!-- Timer Progress Countdown Bar -->
+          <div class="w-full bg-dark-bg h-1.5 relative overflow-hidden">
+            <div id="pane-progress-${pane.id}" class="timer-progress bg-accent h-full" style="width: ${progressPercent}%;"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function updatePaneCardUI(paneId) {
+      const pane = state.panes.find(p => p.id === paneId);
+      if (!pane) return;
+      const cardEl = document.getElementById(`pane-card-${paneId}`);
+      if (cardEl) {
+        cardEl.outerHTML = createPaneCardHTML(pane);
+      }
+    }
+
+    function updateProgressUI(paneId) {
+      const pane = state.panes.find(p => p.id === paneId);
+      if (!pane) return;
+      const bar = document.getElementById(`pane-progress-${paneId}`);
+      if (bar) {
+        const percent = (pane.timerElapsed / pane.timerDuration) * 100;
+        bar.style.width = `${percent}%`;
+      }
+    }
+
+    function updateDrawerUI() {
+      const badge = document.getElementById('savedCountBadge');
+      const content = document.getElementById('drawerContent');
+
+      if (badge) badge.textContent = state.savedReferences.length;
+
+      if (!content) return;
+
+      if (state.savedReferences.length === 0) {
+        content.innerHTML = `
+          <div class="w-full text-center py-6 text-gray-500 text-xs flex flex-col items-center gap-1">
+            <i class="fa-regular fa-bookmark text-lg mb-1"></i>
+            No saved references yet. Click <i class="fa-solid fa-bookmark inline text-accent"></i> on any pane to save images here.
+          </div>
+        `;
+        return;
+      }
+
+      content.innerHTML = state.savedReferences.map(item => `
+        <div class="relative group flex-shrink-0 w-32 h-36 bg-card-bg border border-border-subtle rounded-lg overflow-hidden flex flex-col">
+          <img 
+            src="${item.url}" 
+            alt="${escapeHtml(item.title)}" 
+            class="w-full h-24 object-cover cursor-pointer"
+            onclick="loadSavedToPane1('${item.url}', '${escapeHtml(item.title)}')"
+          />
+          <div class="p-1.5 flex-1 flex flex-col justify-between">
+            <span class="text-[10px] text-gray-300 font-medium truncate">${escapeHtml(item.title)}</span>
+            <span class="text-[9px] text-gray-500 truncate">${escapeHtml(item.queryGroup || 'Saved')}</span>
+          </div>
+          <button 
+            onclick="removeFromDrawer(${item.id})" 
+            class="absolute top-1 right-1 bg-black/80 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Remove from Drive"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+  </script>
+</body>
+</html>
