@@ -1,0 +1,2148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RefView - Art Reference Manager</title>
+  <style>
+    :root {
+      --bg-dark: #0f1115;
+      --bg-panel: #161920;
+      --bg-card: #202430;
+      --accent: #4f46e5;
+      --accent-hover: #6366f1;
+      --border-color: #2a2e3d;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --panel-width: 340px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* HEADER STYLES */
+    header {
+      background-color: var(--bg-panel);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      flex-shrink: 0;
+      z-index: 100;
+      gap: 16px;
+    }
+
+    .brand {
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .brand-tag {
+      font-size: 0.7rem;
+      background: rgba(79, 70, 229, 0.2);
+      color: var(--accent-hover);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(79, 70, 229, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* TOP BAR GLOBAL SEARCH */
+    .global-search-container {
+      flex: 1;
+      max-width: 500px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .global-search-msg {
+      font-size: 0.85rem;
+      color: var(--accent-hover);
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 6px;
+      background: rgba(79, 70, 229, 0.1);
+      border: 1px dashed rgba(79, 70, 229, 0.4);
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .global-search-msg:hover {
+      background: rgba(79, 70, 229, 0.25);
+      border-color: var(--accent-hover);
+      color: #fff;
+    }
+
+    .global-search-form {
+      display: none;
+      width: 100%;
+      gap: 6px;
+    }
+
+    .global-search-form.active {
+      display: flex;
+    }
+
+    .global-search-input {
+      flex: 1;
+      background: var(--bg-dark);
+      border: 1px solid var(--accent);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 6px 12px;
+      font-size: 0.82rem;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+      transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+    }
+
+    .btn-board {
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      padding: 7px 14px;
+      text-transform: uppercase;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--text-muted);
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    /* MAIN WORKSPACE & PANES */
+    .workspace {
+      flex: 1;
+      display: grid;
+      gap: 12px;
+      padding: 12px;
+      overflow: hidden;
+      background: var(--bg-dark);
+    }
+
+    /* Dynamic layouts based on active pane count (Max 8) */
+    .workspace[data-panes="1"] { grid-template-columns: 1fr; }
+    .workspace[data-panes="2"] { grid-template-columns: repeat(2, 1fr); }
+    .workspace[data-panes="3"] { grid-template-columns: repeat(3, 1fr); }
+    .workspace[data-panes="4"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+    .workspace[data-panes="5"],
+    .workspace[data-panes="6"] { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+    .workspace[data-panes="7"],
+    .workspace[data-panes="8"] { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); }
+
+    .pane {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .pane-header {
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      z-index: 30;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+    }
+
+    .pane-search-form {
+      display: flex;
+      flex: 1;
+      gap: 6px;
+      position: relative;
+    }
+
+    .pane-search-container {
+      position: relative;
+      flex: 1;
+      display: flex;
+    }
+
+    .pane-input {
+      width: 100%;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 5px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    .pane-input:focus {
+      outline: 1px solid var(--accent);
+    }
+
+    /* PREDICTIVE TEXT SUGGESTIONS DROPDOWN */
+    .search-suggestions {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+      display: none;
+    }
+
+    .search-suggestions.open {
+      display: block;
+    }
+
+    .suggestion-item {
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.12s ease;
+    }
+
+    .suggestion-item:hover,
+    .suggestion-item.highlighted {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .suggestion-item .match-type {
+      font-size: 0.65rem;
+      opacity: 0.6;
+      text-transform: uppercase;
+    }
+
+    .pane-timer-select {
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 5px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    /* PANE VIEWER AREA */
+    .pane-viewport {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #08090b;
+      cursor: grab;
+      user-select: none;
+    }
+
+    .pane-viewport.dragging {
+      cursor: grabbing;
+    }
+
+    .pane-image-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .pane-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      user-select: none;
+      transition: filter 0.2s ease;
+      transform-origin: center center;
+      will-change: transform;
+    }
+
+    .pane-img.grayscale { filter: grayscale(100%); }
+
+    /* 3x3 Grid Overlay */
+    .grid-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .grid-overlay.active { opacity: 1; }
+
+    .grid-overlay div {
+      border: 1px dashed rgba(255, 255, 255, 0.25);
+    }
+
+    /* EMPTY STATE */
+    .empty-pane-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      padding: 20px;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    /* TIMER PROGRESS BAR */
+    .timer-progress-container {
+      height: 3px;
+      background: rgba(255, 255, 255, 0.05);
+      width: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 40;
+    }
+
+    .timer-progress-bar {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+    }
+
+    /* PANE FOOTER TOOLBAR */
+    .pane-footer {
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid var(--border-color);
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      z-index: 30;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+    }
+
+    /* AUTO-HIDE HEADERS & FOOTERS ON ACTIVE PANES */
+    .pane.has-image .pane-header,
+    .pane.has-image .pane-footer {
+      position: absolute;
+      left: 0;
+      right: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .pane.has-image .pane-header {
+      top: 0;
+      transform: translateY(-100%);
+    }
+
+    .pane.has-image .pane-footer {
+      bottom: 0;
+      transform: translateY(100%);
+    }
+
+    .pane.has-image:hover .pane-header,
+    .pane.has-image:hover .pane-footer,
+    .pane.has-image:focus-within .pane-header,
+    .pane.has-image:focus-within .pane-footer {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .tool-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-tool {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 4px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .btn-tool:hover {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border-color: var(--border-color);
+    }
+
+    .btn-tool.active {
+      color: var(--accent-hover);
+      background: rgba(79, 70, 229, 0.15);
+      border-color: rgba(79, 70, 229, 0.3);
+    }
+
+    .zoom-badge {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      background: rgba(0, 0, 0, 0.4);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      font-family: monospace;
+    }
+
+    /* COLLAPSIBLE BOTTOM DRAWER */
+    .drawer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 200px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border-color);
+      z-index: 200;
+      transform: translateY(100%);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .drawer.open {
+      transform: translateY(0);
+    }
+
+    .drawer-header {
+      padding: 8px 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .drawer-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .drawer-content {
+      flex: 1;
+      padding: 10px;
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+    }
+
+    .saved-card {
+      height: 100%;
+      min-width: 140px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: border-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .saved-card:hover {
+      border-color: var(--accent-hover);
+      transform: translateY(-2px);
+    }
+
+    .saved-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .saved-card .remove-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(0, 0, 0, 0.7);
+      color: var(--danger);
+      border: none;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .saved-card:hover .remove-btn {
+      opacity: 1;
+    }
+
+    #boardFileInput {
+      display: none;
+    }
+
+    /* RIGHT SIDE TOOLS PANEL & HOVER TRIGGER */
+    #hover-trigger {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 20px;
+      height: 100vh;
+      z-index: 299;
+    }
+
+    #tools-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: var(--panel-width);
+      height: 100vh;
+      background-color: var(--bg-panel);
+      border-left: 1px solid var(--border-color);
+      box-shadow: -4px 0 15px rgba(0, 0, 0, 0.5);
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #tools-panel.open {
+      transform: translateX(0);
+    }
+
+    .panel-header {
+      padding: 16px;
+      background-color: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-header h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .lock-indicator {
+      font-size: 0.75rem;
+      color: var(--accent-hover);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: none;
+    }
+
+    #tools-panel.locked .lock-indicator {
+      display: inline;
+    }
+
+    .panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .tool-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .tool-section h3 {
+      font-size: 0.85rem;
+      margin-bottom: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      grid-template-rows: repeat(8, 28px);
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+
+    .swatch-item {
+      width: 100%;
+      height: 100%;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: transform 0.1s ease;
+    }
+
+    .swatch-item:hover {
+      transform: scale(1.15);
+      z-index: 2;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    .panel-btn {
+      width: 100%;
+      padding: 8px 12px;
+      background-color: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: opacity 0.2s, background-color 0.2s;
+    }
+
+    .panel-btn:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .breakdown-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .breakdown-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--text-main);
+    }
+
+    .breakdown-color {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+    }
+
+    .breakdown-bar-bg {
+      flex: 1;
+      height: 8px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .breakdown-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+    }
+
+    .breakdown-percent {
+      width: 35px;
+      text-align: right;
+      color: var(--text-muted);
+    }
+
+    .comp-block {
+      margin-bottom: 16px;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+    }
+
+    .comp-block:last-child {
+      margin-bottom: 0;
+    }
+
+    .comp-header {
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+      color: var(--text-main);
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+
+    .row-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin: 4px 0 2px 0;
+      text-transform: uppercase;
+    }
+
+    .swatch-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      height: 22px;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .swatch-step {
+      height: 100%;
+      cursor: pointer;
+      transition: opacity 0.1s;
+    }
+
+    .swatch-step:hover {
+      opacity: 0.8;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background-color: #ffffff;
+      color: #000;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: transform 0.3s ease;
+      z-index: 400;
+    }
+
+    #toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      RefView
+      <span class="brand-tag">Workspace</span>
+    </div>
+
+    <!-- GLOBAL SEARCH TOGGLE / FORM -->
+    <div class="global-search-container">
+      <div id="globalSearchMsg" class="global-search-msg" onclick="enableGlobalSearchForm()">
+        Want to start fresh? Click to search all panes
+      </div>
+      <form id="globalSearchForm" class="global-search-form" onsubmit="handleGlobalBoardSearch(event)">
+        <input type="text" id="globalSearchInput" class="global-search-input" placeholder="Search across all panes..." autocomplete="off" />
+        <button type="submit" class="btn btn-primary">Search</button>
+        <button type="button" class="btn" onclick="disableGlobalSearchForm()">✕</button>
+      </form>
+    </div>
+
+    <div class="header-actions">
+      <button id="addPaneBtn" class="btn" onclick="addPane()">+ Add Pane</button>
+      <button id="boardToggleBtn" class="btn btn-board" onclick="toggleDrawer()">📁 Board (<span id="savedCount">0</span>)</button>
+    </div>
+  </header>
+
+  <!-- WORKSPACE -->
+  <main id="workspace" class="workspace" data-panes="2"></main>
+
+  <!-- COLLAPSIBLE BOTTOM DRAWER -->
+  <div id="drawer" class="drawer">
+    <div class="drawer-header">
+      <span>Saved References Board (Double-click thumbnail to view in pane)</span>
+      <div class="drawer-actions">
+        <button class="btn" onclick="saveBoard()" title="Save board state and saved thumbnails to a file">
+          💾 Save Board
+        </button>
+        <button class="btn" onclick="triggerLoadBoard()" title="Load a saved board file">
+          📂 Load Board
+        </button>
+        <button class="btn" style="color: var(--danger);" onclick="clearAllSaved()">Clear Board</button>
+        <button class="btn-tool" onclick="toggleDrawer()">✕ Close</button>
+      </div>
+    </div>
+    <div id="drawerContent" class="drawer-content"></div>
+  </div>
+
+  <!-- RIGHT SIDE COLOR TOOLS PANEL & TRIGGER -->
+  <div id="hover-trigger"></div>
+
+  <aside id="tools-panel">
+    <div class="panel-header">
+      <h2>Color Analysis</h2>
+      <span class="lock-indicator">● Locked Open</span>
+    </div>
+
+    <div class="panel-content">
+      <div class="tool-section">
+        <h3>Extracted Swatches</h3>
+        <div id="swatch-grid" class="swatch-grid"></div>
+        <button id="btn-export" class="panel-btn" style="margin-bottom: 16px;">Export All Hex Codes</button>
+
+        <h3>Hue Distribution</h3>
+        <div id="breakdown-list" class="breakdown-list" style="margin-bottom: 16px;"></div>
+
+        <h3>Top 3 Colors & Complements</h3>
+        <div id="gradients-container"></div>
+      </div>
+
+      <button id="btn-refresh" class="panel-btn" style="background-color: var(--bg-card); border: 1px solid var(--border-color); margin-top: auto;">
+        Refresh Analysis
+      </button>
+    </div>
+  </aside>
+
+  <div id="toast">Copied to clipboard!</div>
+
+  <!-- HIDDEN FILE INPUT -->
+  <input type="file" id="boardFileInput" accept=".json" onchange="handleLoadBoard(event)" />
+
+  <script>
+    const MAX_PANES = 8;
+    const STORAGE_KEY = 'refview_saved_references';
+    let paneCounter = 0;
+    const panesData = new Map();
+    let savedReferences = [];
+
+    /* PREDICTIVE TEXT DICTIONARY FOR ART REFERENCES */
+    const SUGGESTIONS_DICTIONARY = [
+      /* POSES */
+      { term: 'action pose', type: 'pose' },
+      { term: 'dynamic pose', type: 'pose' },
+      { term: 'foreshortening pose', type: 'pose' },
+      { term: 'contrapposto stance', type: 'pose' },
+      { term: 'sitting pose', type: 'pose' },
+      { term: 'kneeling pose', type: 'pose' },
+      { term: 'crouching pose', type: 'pose' },
+      { term: 'jumping pose', type: 'pose' },
+      { term: 'running pose', type: 'pose' },
+      { term: 'fighting stance', type: 'pose' },
+      { term: 'sword stance', type: 'pose' },
+      { term: 'hand gestures', type: 'pose' },
+      { term: 'facial expressions', type: 'expression' },
+
+      /* ANIMALS */
+      { term: 'canine anatomy', type: 'animal' },
+      { term: 'feline anatomy', type: 'animal' },
+      { term: 'equine anatomy', type: 'animal' },
+      { term: 'big cats panther lion', type: 'animal' },
+      { term: 'wolf running stance', type: 'animal' },
+      { term: 'horse in motion', type: 'animal' },
+      { term: 'birds of prey flight', type: 'animal' },
+      { term: 'eagle wingspread', type: 'animal' },
+      { term: 'owl perch pose', type: 'animal' },
+      { term: 'reptile scales detail', type: 'animal' },
+      { term: 'dragon creature concept', type: 'animal' },
+      { term: 'bear quadrupeds', type: 'animal' },
+      { term: 'deer stag silhouette', type: 'animal' },
+      { term: 'aquatic marine life', type: 'animal' },
+
+      /* ANATOMY & GENERAL REFERENCE */
+      { term: 'human anatomy study', type: 'anatomy' },
+      { term: 'torso muscle structure', type: 'anatomy' },
+      { term: 'drapery fabric folds', type: 'fabric' },
+      { term: 'dramatic rim lighting', type: 'lighting' },
+      { term: 'character turnaround', type: 'concept' },
+      { term: 'mech armor detail', type: 'sci-fi' },
+      { term: 'cyberpunk vehicle', type: 'vehicle' },
+      { term: 'vintage motorcycle', type: 'vehicle' },
+      { term: 'urban environment', type: 'environment' },
+      { term: 'sci-fi corridor', type: 'environment' },
+      { term: 'gouache color study', type: 'palette' }
+    ];
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSavedFromLocalStorage();
+      addPane();
+      addPane();
+      initClickOutsideHandler();
+      initToolsPanel();
+    });
+
+    function enableGlobalSearchForm() {
+      document.getElementById('globalSearchMsg').style.display = 'none';
+      const form = document.getElementById('globalSearchForm');
+      form.classList.add('active');
+      const input = document.getElementById('globalSearchInput');
+      input.focus();
+    }
+
+    function disableGlobalSearchForm() {
+      const form = document.getElementById('globalSearchForm');
+      form.classList.remove('active');
+      document.getElementById('globalSearchMsg').style.display = 'block';
+    }
+
+    async function handleGlobalBoardSearch(event) {
+      if (event) event.preventDefault();
+
+      const input = document.getElementById('globalSearchInput');
+      const query = input.value.trim();
+      if (!query) return;
+
+      const confirmed = confirm("Are you sure you want to search all panes? Any unsaved images in active panes will be cleared!");
+      if (!confirmed) return;
+
+      // 1. Clear all existing panes
+      panesData.forEach((state, id) => removePane(id, true));
+      panesData.clear();
+      document.getElementById('workspace').innerHTML = '';
+      paneCounter = 0;
+
+      // 2. Fetch up to 30 pages of results
+      let allImages = [];
+      try {
+        const fetchPromises = [];
+        for (let page = 1; page <= 30; page++) {
+          fetchPromises.push(
+            fetch(`/.netlify/functions/search?q=${encodeURIComponent(query)}&page=${page}`)
+              .then(res => res.ok ? res.json() : { images: [] })
+              .then(data => data.images || [])
+              .catch(() => [])
+          );
+        }
+
+        const results = await Promise.all(fetchPromises);
+        allImages = results.flat();
+      } catch (err) {
+        console.warn("Global board fetch error:", err);
+      }
+
+      if (!allImages.length) {
+        alert(`No reference images found for "${query}"`);
+        disableGlobalSearchForm();
+        addPane();
+        addPane();
+        return;
+      }
+
+      const shuffledPool = shuffleArray([...allImages]);
+
+      // 3. Open 8 fresh panes configured for 30s timer
+      const placeholderText = `Board Search - ${query}`;
+      for (let i = 0; i < MAX_PANES; i++) {
+        const paneId = addPane();
+        if (paneId) {
+          const state = panesData.get(paneId);
+          state.query = query;
+          state.images = shuffledPool;
+          state.currentIndex = (i * 3) % state.images.length; // distribute start points
+          state.historyStack = [state.currentIndex];
+          state.timerSeconds = 30;
+
+          const pInput = document.getElementById(`input-${paneId}`);
+          if (pInput) pInput.placeholder = placeholderText;
+
+          const pTimer = document.getElementById(`timer-select-${paneId}`);
+          if (pTimer) pTimer.value = "30";
+
+          resetZoom(paneId);
+          displayCurrentImage(paneId);
+          startPaneTimer(paneId);
+        }
+      }
+
+      disableGlobalSearchForm();
+      input.value = '';
+    }
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function initClickOutsideHandler() {
+      document.addEventListener('click', (event) => {
+        const drawer = document.getElementById('drawer');
+        const boardBtn = document.getElementById('boardToggleBtn');
+        if (drawer && drawer.classList.contains('open')) {
+          if (!drawer.contains(event.target) && !boardBtn.contains(event.target)) {
+            drawer.classList.remove('open');
+          }
+        }
+
+        if (!event.target.closest('.pane-search-container')) {
+          document.querySelectorAll('.search-suggestions').forEach(el => el.classList.remove('open'));
+        }
+      });
+    }
+
+    function loadSavedFromLocalStorage() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          savedReferences = JSON.parse(stored);
+        }
+      } catch (e) {
+        console.warn("Could not read from localStorage:", e);
+        savedReferences = [];
+      }
+      renderSavedDrawer();
+    }
+
+    function saveToLocalStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(savedReferences));
+      } catch (e) {
+        console.warn("Could not save to localStorage:", e);
+      }
+    }
+
+    function renderSavedDrawer() {
+      document.getElementById('savedCount').textContent = savedReferences.length;
+      const drawerContent = document.getElementById('drawerContent');
+
+      if (savedReferences.length === 0) {
+        drawerContent.innerHTML = `
+          <div style="color: var(--text-muted); font-size: 0.8rem; align-self: center; margin: auto;">
+            No saved references on board. Click "➕ Add to Board" on any pane to pin references here.
+          </div>`;
+        return;
+      }
+
+      drawerContent.innerHTML = '';
+      savedReferences.forEach((item, index) => {
+        const card = document.createElement('div');
+        card.className = 'saved-card';
+        card.title = 'Double-click to open in pane | Double-click ✕ to remove';
+        card.ondblclick = () => openSavedInNewPane(item.imageUrl);
+
+        card.innerHTML = `
+          <img src="${item.imageUrl}" alt="Saved Reference" />
+          <button class="remove-btn" title="Double-click to remove" 
+                  ondblclick="event.stopPropagation(); removeSavedItem(${index})">✕</button>
+        `;
+        drawerContent.appendChild(card);
+      });
+    }
+
+    function addToBoard(id) {
+      const state = panesData.get(id);
+      if (!state || !state.images.length) return;
+
+      const current = state.images[state.currentIndex];
+      
+      const exists = savedReferences.some(ref => ref.imageUrl === current.imageUrl);
+      if (!exists) {
+        savedReferences.push(current);
+        saveToLocalStorage();
+        renderSavedDrawer();
+      }
+
+      const btn = document.getElementById(`btn-add-board-${id}`);
+      if (btn) {
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Added!';
+        btn.style.color = 'var(--success)';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.color = '';
+        }, 1200);
+      }
+    }
+
+    async function saveImageFile(id) {
+      const state = panesData.get(id);
+      if (!state || !state.images.length) return;
+
+      const current = state.images[state.currentIndex];
+
+      try {
+        const response = await fetch(current.imageUrl);
+        const blob = await response.blob();
+        
+        const ext = blob.type.split('/')[1] || 'jpg';
+        const defaultName = `reference-${Date.now()}.${ext}`;
+
+        if ('showSaveFilePicker' in window) {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: defaultName,
+            types: [{
+              description: 'Image File',
+              accept: { [blob.type || 'image/jpeg']: [`.${ext}`] }
+            }]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+        } else {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = defaultName;
+          a.click();
+        }
+      } catch (err) {
+        console.warn("Direct file download skipped or blocked by CORS, opening in new tab:", err);
+        window.open(current.imageUrl, '_blank');
+      }
+    }
+
+    function removeSavedItem(index) {
+      savedReferences.splice(index, 1);
+      saveToLocalStorage();
+      renderSavedDrawer();
+    }
+
+    function clearAllSaved() {
+      if (!savedReferences.length) return;
+      if (confirm("Are you sure you want to clear all thumbnails from the board?")) {
+        savedReferences = [];
+        saveToLocalStorage();
+        renderSavedDrawer();
+      }
+    }
+
+    async function saveBoard() {
+      const activePanes = [];
+      panesData.forEach((state) => {
+        activePanes.push({
+          query: state.query,
+          images: state.images,
+          currentIndex: state.currentIndex,
+          historyStack: state.historyStack,
+          timerSeconds: state.timerSeconds,
+          isPaused: state.isPaused,
+          isGrayscale: state.isGrayscale,
+          isFlipped: state.isFlipped,
+          showGrid: state.showGrid,
+          zoom: state.zoom,
+          panX: state.panX,
+          panY: state.panY
+        });
+      });
+
+      const boardData = {
+        version: "1.8",
+        timestamp: new Date().toISOString(),
+        panes: activePanes,
+        savedReferences: savedReferences
+      };
+
+      const jsonString = JSON.stringify(boardData, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const defaultName = `refview-board-${Date.now()}.json`;
+
+      try {
+        if ('showSaveFilePicker' in window) {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: defaultName,
+            types: [{
+              description: 'RefView Board File (*.json)',
+              accept: { 'application/json': ['.json'] }
+            }]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+        } else {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = defaultName;
+          a.click();
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error("Save Board failed:", err);
+        }
+      }
+    }
+
+    function triggerLoadBoard() {
+      document.getElementById('boardFileInput').click();
+    }
+
+    function handleLoadBoard(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const boardData = JSON.parse(e.target.result);
+          if (!boardData.panes) throw new Error("Invalid Board file format");
+
+          panesData.forEach((state, id) => removePane(id, true));
+          panesData.clear();
+          document.getElementById('workspace').innerHTML = '';
+          paneCounter = 0;
+
+          if (Array.isArray(boardData.savedReferences)) {
+            savedReferences = boardData.savedReferences;
+            saveToLocalStorage();
+            renderSavedDrawer();
+          }
+
+          boardData.panes.forEach((pState) => {
+            const paneId = addPane();
+            if (paneId) {
+              const state = panesData.get(paneId);
+              state.query = pState.query || '';
+              state.images = pState.images || [];
+              state.currentIndex = pState.currentIndex || 0;
+              state.historyStack = pState.historyStack || [state.currentIndex];
+              state.timerSeconds = pState.timerSeconds || 0;
+              state.isPaused = pState.isPaused || false;
+              state.isGrayscale = pState.isGrayscale || false;
+              state.isFlipped = pState.isFlipped || false;
+              state.showGrid = pState.showGrid || false;
+              state.zoom = pState.zoom || 1;
+              state.panX = pState.panX || 0;
+              state.panY = pState.panY || 0;
+
+              document.getElementById(`input-${paneId}`).value = state.query;
+              document.getElementById(`timer-select-${paneId}`).value = state.timerSeconds;
+
+              if (state.images.length > 0) {
+                displayCurrentImage(paneId);
+                if (state.isGrayscale) toggleGrayscale(paneId);
+                if (state.isFlipped) toggleFlip(paneId);
+                if (state.showGrid) toggleGrid(paneId);
+                applyTransform(paneId);
+                if (!state.isPaused && state.timerSeconds > 0) startPaneTimer(paneId);
+              }
+            }
+          });
+
+        } catch (err) {
+          alert("Could not parse Board file. Ensure it is a valid RefView .json file.");
+          console.error(err);
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function updateWorkspaceLayout() {
+      const workspace = document.getElementById('workspace');
+      const count = panesData.size;
+      workspace.setAttribute('data-panes', count);
+
+      const addBtn = document.getElementById('addPaneBtn');
+      if (addBtn) {
+        addBtn.disabled = count >= MAX_PANES;
+        addBtn.title = count >= MAX_PANES ? 'Maximum 8 panes reached' : '';
+      }
+    }
+
+    function handleImageError(id) {
+      const state = panesData.get(id);
+      if (!state || !state.images.length) return;
+
+      console.warn(`Image failed to load in pane ${id}: ${state.images[state.currentIndex]?.imageUrl}. Auto-skipping...`);
+      
+      // Remove broken image from current array
+      state.images.splice(state.currentIndex, 1);
+
+      if (state.images.length === 0) {
+        const wrapper = document.getElementById(`wrapper-${id}`);
+        const empty = document.getElementById(`empty-${id}`);
+        const pane = document.getElementById(`pane-${id}`);
+        
+        if (wrapper) wrapper.style.display = 'none';
+        if (empty) {
+          empty.textContent = '❌ All images failed to load or were blocked.';
+          empty.style.display = 'flex';
+        }
+        if (pane) pane.classList.remove('has-image');
+        pausePaneTimer(id);
+        return;
+      }
+
+      if (state.currentIndex >= state.images.length) {
+        state.currentIndex = 0;
+      }
+
+      displayCurrentImage(id);
+      resetTimerProgress(id);
+    }
+
+    function addPane() {
+      if (panesData.size >= MAX_PANES) return null;
+
+      paneCounter++;
+      const paneId = paneCounter;
+
+      const state = {
+        id: paneId,
+        query: '',
+        images: [],
+        currentIndex: 0,
+        historyStack: [],
+        timerSeconds: 0,
+        progressInterval: null,
+        isPaused: false,
+        isGrayscale: false,
+        isFlipped: false,
+        showGrid: false,
+        zoom: 1,
+        panX: 0,
+        panY: 0,
+        isDragging: false,
+        startX: 0,
+        startY: 0
+      };
+
+      panesData.set(paneId, state);
+
+      const paneEl = document.createElement('div');
+      paneEl.className = 'pane';
+      paneEl.id = `pane-${paneId}`;
+      paneEl.innerHTML = `
+        <div class="timer-progress-container">
+          <div id="progress-${paneId}" class="timer-progress-bar"></div>
+        </div>
+
+        <div class="pane-header">
+          <form class="pane-search-form" onsubmit="handlePaneSearch(event, ${paneId})">
+            <div class="pane-search-container">
+              <input type="text" id="input-${paneId}" class="pane-input" placeholder="Search reference..." 
+                     oninput="handleSearchInput(${paneId})" onkeydown="handleSearchKeyDown(event, ${paneId})" autocomplete="off" />
+              <div id="suggestions-${paneId}" class="search-suggestions"></div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="padding: 4px 8px; font-size: 0.75rem;">Search</button>
+          </form>
+
+          <select id="timer-select-${paneId}" class="pane-timer-select" onchange="setPaneTimer(${paneId}, this.value)">
+            <option value="0">Off</option>
+            <option value="15">15s</option>
+            <option value="30">30s</option>
+            <option value="60">1m</option>
+            <option value="180">3m</option>
+          </select>
+
+          <button class="btn-tool" title="Close Pane" onclick="removePane(${paneId})">✕</button>
+        </div>
+
+        <div class="pane-viewport" id="viewport-${paneId}">
+          <div class="empty-pane-state" id="empty-${paneId}">
+            🔍 Enter a query above to load references
+          </div>
+          <div class="pane-image-wrapper" id="wrapper-${paneId}" style="display: none;">
+            <img id="img-${paneId}" class="pane-img" src="" crossorigin="anonymous" alt="Reference" onerror="handleImageError(${paneId})" />
+            <div id="grid-${paneId}" class="grid-overlay">
+              <div></div><div></div><div></div>
+              <div></div><div></div><div></div>
+              <div></div><div></div><div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pane-footer">
+          <div class="tool-group">
+            <button class="btn-tool" title="Previous Image" onclick="prevImage(${paneId})">⏮</button>
+            <button id="btn-pause-${paneId}" class="btn-tool" title="Pause / Play" onclick="togglePause(${paneId})">⏸</button>
+            <button class="btn-tool" title="Next Image" onclick="nextImage(${paneId})">⏭</button>
+            <button id="btn-gray-${paneId}" class="btn-tool" title="Grayscale Toggle" onclick="toggleGrayscale(${paneId})">🎨</button>
+            <button id="btn-flip-${paneId}" class="btn-tool" title="Flip Horizontal" onclick="toggleFlip(${paneId})">↔</button>
+            <button id="btn-grid-tool-${paneId}" class="btn-tool" title="3x3 Composition Grid" onclick="toggleGrid(${paneId})">井</button>
+            <button class="btn-tool" title="Reset Zoom & Pan" onclick="resetZoom(${paneId})">🔍</button>
+            <span id="zoom-badge-${paneId}" class="zoom-badge">100%</span>
+          </div>
+          <div class="tool-group">
+            <button id="btn-add-board-${paneId}" class="btn-tool" title="Add reference thumbnail to board" onclick="addToBoard(${paneId})">➕ Add to Board</button>
+            <button class="btn-tool" title="Save / Download image file" onclick="saveImageFile(${paneId})">💾 Save Image</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('workspace').appendChild(paneEl);
+      attachZoomPanEvents(paneId);
+      updateWorkspaceLayout();
+      return paneId;
+    }
+
+    /* PREDICTIVE TEXT / AUTOCOMPLETE FUNCTIONS */
+    function handleSearchInput(paneId) {
+      const input = document.getElementById(`input-${paneId}`);
+      const suggestionsBox = document.getElementById(`suggestions-${paneId}`);
+      const val = input.value.trim().toLowerCase();
+
+      if (!val) {
+        suggestionsBox.classList.remove('open');
+        suggestionsBox.innerHTML = '';
+        return;
+      }
+
+      const matches = SUGGESTIONS_DICTIONARY.filter(item => 
+        item.term.toLowerCase().includes(val)
+      ).slice(0, 6);
+
+      if (matches.length === 0) {
+        suggestionsBox.classList.remove('open');
+        suggestionsBox.innerHTML = '';
+        return;
+      }
+
+      suggestionsBox.innerHTML = matches.map((item, idx) => `
+        <div class="suggestion-item" data-term="${item.term}" onclick="selectSuggestion(${paneId}, '${item.term}')">
+          <span>${item.term}</span>
+          <span class="match-type">${item.type}</span>
+        </div>
+      `).join('');
+
+      suggestionsBox.classList.add('open');
+    }
+
+    function handleSearchKeyDown(event, paneId) {
+      const suggestionsBox = document.getElementById(`suggestions-${paneId}`);
+      if (!suggestionsBox || !suggestionsBox.classList.contains('open')) return;
+
+      const items = Array.from(suggestionsBox.querySelectorAll('.suggestion-item'));
+      if (!items.length) return;
+
+      let highlighted = suggestionsBox.querySelector('.suggestion-item.highlighted');
+      let currentIndex = items.indexOf(highlighted);
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        if (currentIndex < items.length - 1) {
+          if (highlighted) highlighted.classList.remove('highlighted');
+          items[currentIndex + 1].classList.add('highlighted');
+        } else if (currentIndex === -1) {
+          items[0].classList.add('highlighted');
+        }
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (currentIndex > 0) {
+          highlighted.classList.remove('highlighted');
+          items[currentIndex - 1].classList.add('highlighted');
+        }
+      } else if (event.key === 'Enter') {
+        if (highlighted) {
+          event.preventDefault();
+          selectSuggestion(paneId, highlighted.getAttribute('data-term'));
+        }
+      } else if (event.key === 'Escape') {
+        suggestionsBox.classList.remove('open');
+      }
+    }
+
+    function selectSuggestion(paneId, term) {
+      const input = document.getElementById(`input-${paneId}`);
+      const suggestionsBox = document.getElementById(`suggestions-${paneId}`);
+      input.value = term;
+      suggestionsBox.classList.remove('open');
+      handlePaneSearch(null, paneId);
+    }
+
+    function attachZoomPanEvents(id) {
+      const viewport = document.getElementById(`viewport-${id}`);
+      const state = panesData.get(id);
+
+      if (!viewport) return;
+
+      viewport.addEventListener('wheel', (e) => {
+        if (!state.images.length) return;
+        e.preventDefault();
+
+        const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
+        let newZoom = state.zoom * zoomFactor;
+
+        newZoom = Math.min(Math.max(newZoom, 1), 5);
+
+        if (newZoom === 1) {
+          state.panX = 0;
+          state.panY = 0;
+        }
+
+        state.zoom = newZoom;
+        applyTransform(id);
+      }, { passive: false });
+
+      viewport.addEventListener('mousedown', (e) => {
+        if (state.zoom <= 1 || !state.images.length) return;
+        state.isDragging = true;
+        state.startX = e.clientX - state.panX;
+        state.startY = e.clientY - state.startY;
+        viewport.classList.add('dragging');
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!state.isDragging) return;
+        state.panX = e.clientX - state.startX;
+        state.panY = e.clientY - state.startY;
+        applyTransform(id);
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (state.isDragging) {
+          state.isDragging = false;
+          viewport.classList.remove('dragging');
+        }
+      });
+
+      viewport.addEventListener('dblclick', () => {
+        resetZoom(id);
+      });
+    }
+
+    function applyTransform(id) {
+      const state = panesData.get(id);
+      const img = document.getElementById(`img-${id}`);
+      const badge = document.getElementById(`zoom-badge-${id}`);
+
+      if (!img) return;
+
+      const flipScale = state.isFlipped ? -1 : 1;
+      img.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom * flipScale}, ${state.zoom})`;
+
+      if (badge) {
+        badge.textContent = `${Math.round(state.zoom * 100)}%`;
+      }
+    }
+
+    function resetZoom(id) {
+      const state = panesData.get(id);
+      if (!state) return;
+      state.zoom = 1;
+      state.panX = 0;
+      state.panY = 0;
+      applyTransform(id);
+    }
+
+    function openSavedInNewPane(imageUrl) {
+      if (panesData.size >= MAX_PANES) {
+        alert("Maximum limit of 8 panes reached. Please close a pane first.");
+        return;
+      }
+
+      const paneId = addPane();
+      if (!paneId) return;
+
+      const state = panesData.get(paneId);
+      state.images = [{ imageUrl: imageUrl }];
+      state.currentIndex = 0;
+      state.historyStack = [0];
+      state.timerSeconds = 0;
+      state.isPaused = true;
+
+      document.getElementById(`input-${paneId}`).value = 'Saved Reference';
+      document.getElementById(`timer-select-${paneId}`).value = '0';
+      
+      const btnPause = document.getElementById(`btn-pause-${paneId}`);
+      if (btnPause) {
+        btnPause.textContent = '⏸';
+        btnPause.classList.add('active');
+      }
+
+      displayCurrentImage(paneId);
+    }
+
+    function removePane(id, skipLayoutUpdate = false) {
+      if (panesData.size <= 1 && !skipLayoutUpdate) return;
+      pausePaneTimer(id);
+      panesData.delete(id);
+      const el = document.getElementById(`pane-${id}`);
+      if (el) el.remove();
+      if (!skipLayoutUpdate) updateWorkspaceLayout();
+    }
+
+    async function handlePaneSearch(event, id) {
+      if (event) event.preventDefault();
+
+      const suggestionsBox = document.getElementById(`suggestions-${id}`);
+      if (suggestionsBox) suggestionsBox.classList.remove('open');
+
+      const state = panesData.get(id);
+      const query = document.getElementById(`input-${id}`).value.trim();
+      if (!query) return;
+
+      state.query = query;
+      state.currentIndex = 0;
+      state.historyStack = [0];
+
+      try {
+        const response = await fetch(`/.netlify/functions/search?q=${encodeURIComponent(query)}`);
+        if (!response.ok) throw new Error("Search service failed");
+
+        const data = await response.json();
+        if (data.images && data.images.length > 0) {
+          state.images = shuffleArray([...data.images]);
+          resetZoom(id);
+          displayCurrentImage(id);
+          startPaneTimer(id);
+        } else {
+          alert(`No reference images found for "${query}"`);
+        }
+      } catch (err) {
+        console.warn("Proxy unavailable:", err);
+        alert("Search endpoint unavailable. Ensure Netlify proxy is deployed.");
+      }
+    }
+
+    function displayCurrentImage(id) {
+      const state = panesData.get(id);
+      if (!state.images.length) return;
+
+      const img = document.getElementById(`img-${id}`);
+      const wrapper = document.getElementById(`wrapper-${id}`);
+      const empty = document.getElementById(`empty-${id}`);
+      const pane = document.getElementById(`pane-${id}`);
+
+      const currentItem = state.images[state.currentIndex];
+      img.src = currentItem.imageUrl;
+
+      empty.style.display = 'none';
+      wrapper.style.display = 'flex';
+
+      if (pane) {
+        pane.classList.add('has-image');
+      }
+
+      analyzeImageColors();
+    }
+
+    function nextImage(id) {
+      const state = panesData.get(id);
+      if (!state.images.length) return;
+
+      if (state.images.length > 1) {
+        let randomIndex;
+        do {
+          randomIndex = Math.floor(Math.random() * state.images.length);
+        } while (randomIndex === state.currentIndex);
+        state.currentIndex = randomIndex;
+      } else {
+        state.currentIndex = (state.currentIndex + 1) % state.images.length;
+      }
+
+      state.historyStack.push(state.currentIndex);
+      resetZoom(id);
+      displayCurrentImage(id);
+      resetTimerProgress(id);
+    }
+
+    function prevImage(id) {
+      const state = panesData.get(id);
+      if (!state.images.length) return;
+
+      if (state.historyStack.length > 1) {
+        state.historyStack.pop();
+        state.currentIndex = state.historyStack[state.historyStack.length - 1];
+      } else {
+        state.currentIndex = (state.currentIndex - 1 + state.images.length) % state.images.length;
+        state.historyStack = [state.currentIndex];
+      }
+
+      resetZoom(id);
+      displayCurrentImage(id);
+      resetTimerProgress(id);
+    }
+
+    function setPaneTimer(id, seconds) {
+      const state = panesData.get(id);
+      state.timerSeconds = parseInt(seconds, 10);
+      startPaneTimer(id);
+    }
+
+    function startPaneTimer(id) {
+      pausePaneTimer(id);
+      const state = panesData.get(id);
+
+      if (state.timerSeconds <= 0 || state.isPaused || !state.images.length) return;
+
+      let elapsed = 0;
+      const total = state.timerSeconds * 1000;
+      const intervalTime = 100;
+
+      state.progressInterval = setInterval(() => {
+        elapsed += intervalTime;
+        const pct = Math.min((elapsed / total) * 100, 100);
+        document.getElementById(`progress-${id}`).style.width = `${pct}%`;
+
+        if (elapsed >= total) {
+          nextImage(id);
+          elapsed = 0;
+        }
+      }, intervalTime);
+    }
+
+    function pausePaneTimer(id) {
+      const state = panesData.get(id);
+      if (state && state.progressInterval) {
+        clearInterval(state.progressInterval);
+        state.progressInterval = null;
+      }
+    }
+
+    function resetTimerProgress(id) {
+      document.getElementById(`progress-${id}`).style.width = '0%';
+      startPaneTimer(id);
+    }
+
+    function togglePause(id) {
+      const state = panesData.get(id);
+      state.isPaused = !state.isPaused;
+      const btn = document.getElementById(`btn-pause-${id}`);
+      btn.textContent = state.isPaused ? '▶' : '⏸';
+      btn.classList.toggle('active', state.isPaused);
+
+      if (state.isPaused) {
+        pausePaneTimer(id);
+      } else {
+        startPaneTimer(id);
+      }
+    }
+
+    function toggleGrayscale(id) {
+      const state = panesData.get(id);
+      state.isGrayscale = !state.isGrayscale;
+      document.getElementById(`img-${id}`).classList.toggle('grayscale', state.isGrayscale);
+      document.getElementById(`btn-gray-${id}`).classList.toggle('active', state.isGrayscale);
+    }
+
+    function toggleFlip(id) {
+      const state = panesData.get(id);
+      state.isFlipped = !state.isFlipped;
+      applyTransform(id);
+      document.getElementById(`btn-flip-${id}`).classList.toggle('active', state.isFlipped);
+    }
+
+    function toggleGrid(id) {
+      const state = panesData.get(id);
+      state.showGrid = !state.showGrid;
+      document.getElementById(`grid-${id}`).classList.toggle('active', state.showGrid);
+      document.getElementById(`btn-grid-tool-${id}`).classList.toggle('active', state.showGrid);
+    }
+
+    function toggleDrawer() {
+      document.getElementById('drawer').classList.toggle('open');
+    }
+
+    /* RIGHT SIDE DYNAMIC COLOR ANALYSIS PANEL LOGIC */
+    let isToolsPanelLocked = false;
+    let currentHexCodes = [];
+
+    function initToolsPanel() {
+      const panel = document.getElementById('tools-panel');
+      const hoverTrigger = document.getElementById('hover-trigger');
+
+      hoverTrigger.addEventListener('mouseenter', () => {
+        if (!isToolsPanelLocked) panel.classList.add('open');
+      });
+
+      panel.addEventListener('mouseleave', () => {
+        if (!isToolsPanelLocked) panel.classList.remove('open');
+      });
+
+      panel.addEventListener('click', (e) => {
+        isToolsPanelLocked = true;
+        panel.classList.add('open', 'locked');
+        e.stopPropagation();
+      });
+
+      document.addEventListener('click', (e) => {
+        if (isToolsPanelLocked && !panel.contains(e.target)) {
+          isToolsPanelLocked = false;
+          panel.classList.remove('locked');
+          panel.classList.remove('open');
+        }
+      });
+
+      document.getElementById('btn-export').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!currentHexCodes.length) return;
+        const exportText = currentHexCodes.join(', ');
+        navigator.clipboard.writeText(exportText);
+        showToast('Exported all 40 hex codes to clipboard!');
+      });
+
+      document.getElementById('btn-refresh').addEventListener('click', (e) => {
+        e.stopPropagation();
+        analyzeImageColors();
+        showToast('Color analysis updated!');
+      });
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    function copyToClipboard(hex) {
+      navigator.clipboard.writeText(hex);
+      showToast(`Copied ${hex} to clipboard!`);
+    }
+
+    function rgbToHex(r, g, b) {
+      return "#" + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+    }
+
+    function hexToRgb(hex) {
+      const bigint = parseInt(hex.replace('#', ''), 16);
+      return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+    }
+
+    function rgbToHsl(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h, s, l = (max + min) / 2;
+
+      if (max === min) {
+        h = s = 0;
+      } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+      }
+      return { h: h * 360, s, l };
+    }
+
+    function hslToHex(h, s, l) {
+      h = (h % 360 + 360) % 360;
+      s = Math.max(0, Math.min(1, s));
+      l = Math.max(0, Math.min(1, l));
+
+      const c = (1 - Math.abs(2 * l - 1)) * s;
+      const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+      const m = l - c / 2;
+      let r = 0, g = 0, b = 0;
+
+      if (0 <= h && h < 60) { r = c; g = x; b = 0; }
+      else if (60 <= h && h < 120) { r = x; g = c; b = 0; }
+      else if (120 <= h && h < 180) { r = 0; g = c; b = x; }
+      else if (180 <= h && h < 240) { r = 0; g = x; b = c; }
+      else if (240 <= h && h < 300) { r = x; g = 0; b = c; }
+      else if (300 <= h && h < 360) { r = c; g = 0; b = x; }
+
+      return rgbToHex(Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255));
+    }
+
+    function getColorName(hex) {
+      const { r, g, b } = hexToRgb(hex);
+      const { h, s, l } = rgbToHsl(r, g, b);
+
+      if (l < 0.12) return "Black";
+      if (l > 0.88) return "White";
+      if (s < 0.12) return "Gray";
+
+      if (h >= 345 || h < 15) return l < 0.35 ? "Maroon" : "Red";
+      if (h >= 15 && h < 45) return l < 0.4 ? "Brown" : "Orange";
+      if (h >= 45 && h < 70) return "Yellow";
+      if (h >= 70 && h < 165) return l < 0.3 ? "Dark Green" : "Green";
+      if (h >= 165 && h < 195) return "Cyan";
+      if (h >= 195 && h < 255) return l < 0.3 ? "Navy Blue" : "Blue";
+      if (h >= 255 && h < 290) return "Purple";
+      if (h >= 290 && h < 345) return "Magenta";
+      return "Custom Shade";
+    }
+
+    function generateComplementaryColors(hex) {
+      const { r, g, b } = hexToRgb(hex);
+      const { h, s, l } = rgbToHsl(r, g, b);
+      const offsets = [150, 165, 180, 195, 210];
+      return offsets.map(offset => hslToHex(h + offset, Math.max(s, 0.4), l));
+    }
+
+    function generate5StepGradient(hex) {
+      const { r, g, b } = hexToRgb(hex);
+      const factors = [1.5, 1.25, 1.0, 0.75, 0.5]; 
+
+      return factors.map(f => {
+        const nr = Math.min(255, Math.max(0, Math.round(r * f)));
+        const ng = Math.min(255, Math.max(0, Math.round(g * f)));
+        const nb = Math.min(255, Math.max(0, Math.round(b * f)));
+        return rgbToHex(nr, ng, nb);
+      });
+    }
+
+    function analyzeImageColors() {
+      const activeImages = document.querySelectorAll('.pane-img');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const colorCounts = {};
+      const hueBuckets = { Red: 0, Yellow: 0, Green: 0, Cyan: 0, Blue: 0, Magenta: 0 };
+      let totalPixels = 0;
+
+      activeImages.forEach(img => {
+        if (!img.src || img.style.display === 'none' || !img.complete || img.naturalWidth === 0) return;
+        
+        try {
+          canvas.width = 50;
+          canvas.height = 50;
+          ctx.drawImage(img, 0, 0, 50, 50);
+          const data = ctx.getImageData(0, 0, 50, 50).data;
+
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i], g = data[i+1], b = data[i+2];
+            const qR = Math.round(r / 32) * 32;
+            const qG = Math.round(g / 32) * 32;
+            const qB = Math.round(b / 32) * 32;
+            const hex = rgbToHex(Math.min(255, qR), Math.min(255, qG), Math.min(255, qB));
+
+            colorCounts[hex] = (colorCounts[hex] || 0) + 1;
+            totalPixels++;
+
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            if (max !== min) {
+              let h;
+              const d = max - min;
+              if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+              else if (max === g) h = (b - r) / d + 2;
+              else h = (r - g) / d + 4;
+              h *= 60;
+
+              if (h >= 330 || h < 30) hueBuckets.Red++;
+              else if (h >= 30 && h < 90) hueBuckets.Yellow++;
+              else if (h >= 90 && h < 150) hueBuckets.Green++;
+              else if (h >= 150 && h < 210) hueBuckets.Cyan++;
+              else if (h >= 210 && h < 270) hueBuckets.Blue++;
+              else if (h >= 270 && h < 330) hueBuckets.Magenta++;
+            }
+          }
+        } catch (e) {
+          console.warn("Could not extract canvas data for image (CORS restriction may apply):", e);
+        }
+      });
+
+      const sortedColors = Object.entries(colorCounts)
+        .sort((a, b) => b[1] - a[1])
+        .map(entry => entry[0]);
+
+      while (sortedColors.length < 40) {
+        sortedColors.push('#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'));
+      }
+
+      currentHexCodes = sortedColors.slice(0, 40);
+
+      renderSwatches(currentHexCodes);
+      renderHueUsage(hueBuckets, totalPixels);
+      renderTopGradients(currentHexCodes.slice(0, 3));
+    }
+
+    function renderSwatches(hexList) {
+      const swatchGrid = document.getElementById('swatch-grid');
+      swatchGrid.innerHTML = '';
+      hexList.forEach(hex => {
+        const item = document.createElement('div');
+        item.className = 'swatch-item';
+        item.style.backgroundColor = hex;
+        item.title = `Click to copy: ${hex}`;
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          copyToClipboard(hex);
+        });
+        swatchGrid.appendChild(item);
+      });
+    }
+
+    function renderHueUsage(buckets, total) {
+      const breakdownList = document.getElementById('breakdown-list');
+      breakdownList.innerHTML = '';
+      const hueColors = {
+        Red: '#ff4d4d', Yellow: '#ffeb3b', Green: '#4caf50',
+        Cyan: '#00bcd4', Blue: '#2196f3', Magenta: '#e91e63'
+      };
+
+      const sortedBuckets = Object.keys(buckets)
+        .map(hue => {
+          const count = buckets[hue];
+          const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+          return { hue, pct };
+        })
+        .sort((a, b) => b.pct - a.pct);
+
+      sortedBuckets.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'breakdown-row';
+        row.innerHTML = `
+          <div class="breakdown-color" style="background-color: ${hueColors[item.hue]}"></div>
+          <span style="width: 55px">${item.hue}</span>
+          <div class="breakdown-bar-bg">
+            <div class="breakdown-bar-fill" style="width: ${item.pct}%; background-color: ${hueColors[item.hue]}"></div>
+          </div>
+          <span class="breakdown-percent">${item.pct}%</span>
+        `;
+        breakdownList.appendChild(row);
+      });
+    }
+
+    function renderTopGradients(top3Hexes) {
+      const gradientsContainer = document.getElementById('gradients-container');
+      gradientsContainer.innerHTML = '';
+
+      top3Hexes.forEach((hex) => {
+        const colorName = getColorName(hex);
+        const baseGradientSteps = generate5StepGradient(hex);
+        const complementaryColors = generateComplementaryColors(hex);
+
+        const block = document.createElement('div');
+        block.className = 'comp-block';
+
+        const buildStepRow = (steps) => steps.map(stepHex => `
+          <div class="swatch-step" 
+               style="background-color: ${stepHex}" 
+               title="Copy: ${stepHex}" 
+               onclick="copyToClipboard('${stepHex}')">
+          </div>
+        `).join('');
+
+        block.innerHTML = `
+          <div class="comp-header">${colorName} (${hex})</div>
+          
+          <div class="row-label">Base Gradient</div>
+          <div class="swatch-row">
+            ${buildStepRow(baseGradientSteps)}
+          </div>
+
+          <div class="row-label">Complementary Accents</div>
+          <div class="swatch-row">
+            ${buildStepRow(complementaryColors)}
+          </div>
+        `;
+        gradientsContainer.appendChild(block);
+      });
+    }
+  </script>
+
+  <!-- APP CHANGELOG HISTORY (NON-EXECUTABLE DATA BLOCK) -->
+  <script type="text/plain" id="refview-changelogs">
+    ====================================================================
+    REFVIEW PROJECT CHANGELOG HISTORY
+    ====================================================================
+
+    v1.0.0 — Initial Release
+    ------------------------
+    - Multi-pane workspace layout supporting responsive CSS Grid.
+    - Basic search integration via Netlify serverless proxy.
+    - Image viewing capabilities with basic navigation controls (next/prev).
+    - Image timers for practice sessions.
+
+    v1.1.0 — Image Manipulations & Controls
+    --------------------------------------
+    - Added grayscale mode toggle per pane.
+    - Added horizontal flipping (mirroring) per pane.
+    - Added 3x3 compositional rule-of-thirds grid overlay.
+    - Implemented image zoom and pan features with mouse wheel and drag interactions.
+
+    v1.2.0 — Predictive Text & Search Suggestions
+    ---------------------------------------------
+    - Built-in dictionary containing art reference categories (Poses, Animals, Anatomy, Sci-Fi, etc.).
+    - Interactive dropdown suggestions supporting keyboard navigation (Up/Down/Enter/Escape).
+
+    v1.3.0 — Saved References Board & Storage
+    -----------------------------------------
+    - Collapsible bottom drawer for pinning reference images.
+    - LocalStorage persistence for saved board items.
+    - Direct double-click thumbnail opening into new workspace panes.
+
+    v1.4.0 — Board File Operations
+    ------------------------------
+    - Export active workspace layout and pinned references to `.json` board files.
+    - Import saved board files with state restoration.
+
+    v1.5.0 — UI/UX Refinements
+    --------------------------
+    - Auto-hiding header and footer toolbars on hover for active panes.
+    - Smooth UI transitions and improved empty state feedback.
+
+    v1.6.0 — Default Image Randomization
+    ------------------------------------
+    - Removed shuffle toggle button (`🔀`).
+    - Enabled default Fisher-Yates array shuffling upon search result retrieval.
+    - Non-repeating random selection when clicking next image.
+
+    v1.6.1 — Codebase Documentation
+    -------------------------------
+    - Appended complete historical changelogs into embedded non-executable script tag.
+
+    v1.7.0 — Automatic Error Handling & Auto-Skip
+    ---------------------------------------------
+    - Added `onerror` event listener to `<img>` tags (`handleImageError`).
+    - Automatically purges broken or 403 HTTP forbidden URLs from active image array and advances to next valid image seamlessly.
+
+    v1.8.0 — Global Fresh Board Search
+    ----------------------------------
+    - Added interactive top bar message: "Want to start fresh? Click to search all panes".
+    - Toggles to a global search bar upon click.
+    - Prompts confirmation regarding unsaved changes before execution.
+    - Fetches 30 pages of results, clears existing workspace, opens 8 panes set to 30-second timers, and updates input placeholders to "Board Search - <Query>".
+
+    v1.9.0 — Integrated Color Analysis Panel
+    ---------------------------------------
+    - Integrated right-side sliding Tools panel activated via edge hover or click-lock.
+    - Real-time sampling of active reference images using canvas extraction.
+    - 40-color swatch grid generation with 1-click clipboard copy and bulk hex export.
+    - Categorized hue distribution percentage bars and top-3 color complementary gradient breakdowns.
+  </script>
+
+</body>
+</html>
