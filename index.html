@@ -365,6 +365,13 @@
       overflow: hidden;
       position: relative;
       flex-shrink: 0;
+      cursor: pointer;
+      transition: border-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .saved-card:hover {
+      border-color: var(--accent-hover);
+      transform: translateY(-2px);
     }
 
     .saved-card img {
@@ -403,7 +410,7 @@
   <!-- SAVED REFERENCES DRAWER -->
   <div id="drawer" class="drawer">
     <div class="drawer-header">
-      <span>Saved References</span>
+      <span>Saved References (Double-click any image to open in workspace)</span>
       <button class="btn-tool" onclick="toggleDrawer()">✕ Close</button>
     </div>
     <div id="drawerContent" class="drawer-content">
@@ -529,6 +536,30 @@
 
       document.getElementById('workspace').appendChild(paneEl);
       setLayout(activeLayout);
+      return paneId;
+    }
+
+    function openSavedInNewPane(imageUrl) {
+      const paneId = addPane();
+      const state = panesData.get(paneId);
+
+      // Populate single image item
+      state.images = [{ imageUrl: imageUrl }];
+      state.currentIndex = 0;
+      state.timerSeconds = 0;
+      state.isPaused = true;
+
+      // Update UI elements
+      document.getElementById(`input-${paneId}`).value = 'Saved Reference';
+      document.getElementById(`timer-select-${paneId}`).value = '0';
+      
+      const btnPause = document.getElementById(`btn-pause-${paneId}`);
+      if (btnPause) {
+        btnPause.textContent = '⏸';
+        btnPause.classList.add('active');
+      }
+
+      displayCurrentImage(paneId);
     }
 
     function removePane(id) {
@@ -682,6 +713,8 @@
 
       const card = document.createElement('div');
       card.className = 'saved-card';
+      card.title = 'Double-click to open in workspace';
+      card.ondblclick = () => openSavedInNewPane(current.imageUrl);
       card.innerHTML = `<img src="${current.imageUrl}" alt="Saved" />`;
       drawerContent.appendChild(card);
     }
