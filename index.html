@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>RefView</title>
+  <title>RefView - Reference Search</title>
   <style>
     :root {
       --bg-dark: #121316;
@@ -15,14 +15,19 @@
       --text-main: #f3f4f6;
       --text-muted: #9ca3af;
       --success: #10b981;
-      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: var(--bg-dark);
       color: var(--text-main);
-      margin: 0;
       padding-bottom: 40px;
     }
 
@@ -33,7 +38,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 56px;
+      height: 60px;
       position: sticky;
       top: 0;
       z-index: 100;
@@ -45,41 +50,43 @@
       letter-spacing: -0.02em;
     }
 
-    .controls-group {
+    .search-group {
       display: flex;
-      align-items: center;
-      gap: 12px;
+      gap: 8px;
+      width: 100%;
+      max-width: 480px;
     }
 
-    .btn-key {
-      background: var(--bg-card);
+    .search-input {
+      flex: 1;
+      background: var(--bg-dark);
       border: 1px solid var(--border-color);
       color: var(--text-main);
-      padding: 6px 12px;
-      font-size: 0.85rem;
+      padding: 8px 12px;
       border-radius: 6px;
+      font-size: 0.9rem;
+    }
+
+    .search-input:focus {
+      outline: 1px solid var(--accent);
+    }
+
+    .btn-search {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.85rem;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      transition: background 0.15s ease;
     }
 
-    .btn-key:hover {
-      background: rgba(255, 255, 255, 0.08);
+    .btn-search:hover {
+      background: var(--accent-hover);
     }
 
-    .key-indicator {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background-color: var(--warning);
-    }
-
-    .key-indicator.configured {
-      background-color: var(--success);
-    }
-
-    /* Container & Gallery */
     .container {
       max-width: 1200px;
       margin: 24px auto;
@@ -145,85 +152,6 @@
       font-size: 0.75rem;
       color: var(--text-muted);
     }
-
-    /* Modal Styling */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(4px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease;
-    }
-
-    .modal-overlay.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .modal-card {
-      background: var(--bg-panel);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      width: 100%;
-      max-width: 420px;
-      padding: 20px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-    }
-
-    .modal-card h3 {
-      margin-top: 0;
-      margin-bottom: 8px;
-      font-size: 1.1rem;
-    }
-
-    .modal-card p {
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      margin-bottom: 16px;
-      line-height: 1.4;
-    }
-
-    .modal-input {
-      width: 100%;
-      background: var(--bg-dark);
-      border: 1px solid var(--border-color);
-      color: var(--text-main);
-      padding: 10px;
-      border-radius: 6px;
-      font-size: 0.9rem;
-      box-sizing: border-box;
-      margin-bottom: 16px;
-    }
-
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-    }
-
-    .btn-primary {
-      background: var(--accent);
-      color: white;
-      border: none;
-      padding: 8px 14px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .btn-secondary {
-      background: transparent;
-      color: var(--text-muted);
-      border: 1px solid var(--border-color);
-      padding: 8px 14px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
   </style>
 </head>
 <body>
@@ -231,74 +159,56 @@
   <header>
     <div class="brand">RefView</div>
 
-    <div class="controls-group">
-      <!-- API Key Settings Button -->
-      <button class="btn-key" onclick="openKeyModal()">
-        <span id="keyIndicator" class="key-indicator"></span>
-        🔑 API Key
-      </button>
-    </div>
+    <form class="search-group" onsubmit="handleSearch(event)">
+      <input type="text" id="searchInput" class="search-input" placeholder="Search references (e.g. vintage motorcycles)..." required />
+      <button type="submit" class="btn-search">Search</button>
+    </form>
   </header>
 
   <div class="container">
     <div id="statusBanner" class="status-banner">
-      <span id="statusMessage">Loading gallery data...</span>
+      <span id="statusMessage">Enter a query above to perform a live search.</span>
     </div>
 
     <!-- Image Gallery Grid -->
     <div id="imageContainer" class="image-grid"></div>
   </div>
 
-  <!-- API Key Modal -->
-  <div id="keyModal" class="modal-overlay">
-    <div class="modal-card">
-      <h3>Serper API Settings</h3>
-      <p>Enter your Serper API key below to enable direct live searches. The key is stored locally in your browser and is never committed to GitHub.</p>
-      
-      <input type="password" id="apiKeyInput" class="modal-input" placeholder="Paste Serper API key here..." />
-
-      <div class="modal-actions">
-        <button class="btn-secondary" onclick="closeKeyModal()">Cancel</button>
-        <button class="btn-primary" onclick="saveApiKey()">Save Key</button>
-      </div>
-    </div>
-  </div>
-
   <script>
-    let SERPER_API_KEY = localStorage.getItem('serper_api_key') || '';
+    // Performs live search via Serverless Proxy
+    async function handleSearch(event) {
+      if (event) event.preventDefault();
 
-    window.addEventListener('DOMContentLoaded', () => {
-      updateKeyUI();
-      loadGalleryData();
-    });
+      const query = document.getElementById('searchInput').value.trim();
+      if (!query) return;
 
-    // 1. Load results.json generated by GitHub Actions
-    async function loadGalleryData() {
       const statusMsg = document.getElementById('statusMessage');
-      
+      statusMsg.textContent = `Searching for "${query}"...`;
+
       try {
-        const response = await fetch('./results.json');
-        
+        // Calls Netlify Serverless Proxy Function
+        const response = await fetch(`/.netlify/functions/search?q=${encodeURIComponent(query)}`);
+
         if (!response.ok) {
-          throw new Error(`results.json not found (${response.status})`);
+          throw new Error(`Proxy error: ${response.status}`);
         }
 
         const data = await response.json();
 
         if (data.images && data.images.length > 0) {
           renderImages(data.images);
-          statusMsg.textContent = `Displaying ${data.images.length} cached reference images (Updated via GitHub Actions)`;
+          statusMsg.textContent = `Found ${data.images.length} results for "${query}"`;
         } else {
-          statusMsg.textContent = 'results.json was loaded but contains no images.';
+          statusMsg.textContent = `No image results found for "${query}".`;
+          renderImages([]);
         }
 
       } catch (error) {
-        console.warn('Could not load results.json:', error);
-        statusMsg.textContent = 'No cached results.json found. Set an API Key above to fetch live search results.';
+        console.warn('Serverless proxy unavailable, checking fallback options...', error);
+        statusMsg.textContent = 'Serverless endpoint unavailable. Ensure site is deployed with configured Netlify environment variables.';
       }
     }
 
-    // 2. Render image cards into the grid
     function renderImages(images) {
       const container = document.getElementById('imageContainer');
       container.innerHTML = '';
@@ -319,45 +229,8 @@
       });
     }
 
-    // Helper to prevent script injection in titles
     function escapeHtml(str) {
       return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-    }
-
-    // 3. Modal & Local Storage Management
-    function updateKeyUI() {
-      const indicator = document.getElementById('keyIndicator');
-      const input = document.getElementById('apiKeyInput');
-
-      if (SERPER_API_KEY) {
-        indicator.classList.add('configured');
-        input.value = SERPER_API_KEY;
-      } else {
-        indicator.classList.remove('configured');
-        input.value = '';
-      }
-    }
-
-    function openKeyModal() {
-      document.getElementById('keyModal').classList.add('active');
-    }
-
-    function closeKeyModal() {
-      document.getElementById('keyModal').classList.remove('active');
-    }
-
-    function saveApiKey() {
-      const newKey = document.getElementById('apiKeyInput').value.trim();
-      SERPER_API_KEY = newKey;
-      
-      if (newKey) {
-        localStorage.setItem('serper_api_key', newKey);
-      } else {
-        localStorage.removeItem('serper_api_key');
-      }
-
-      updateKeyUI();
-      closeKeyModal();
     }
   </script>
 </body>
