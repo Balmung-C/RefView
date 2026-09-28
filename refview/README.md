@@ -1,4 +1,4 @@
-RefView is a webapp developed using google gemini for code and setup guidance. The webapp is designed to provide a platform for artist to quickly/passively search, view, and save reference images. The web app uses 3rd party hosting and api management.
+RefView is a webapp developed using google gemini for code and setup guidance. The webapp is designed to provide a platform for artist to quickly/passively search, view, and save reference images. The web app uses 3rd party hosting and api management..
 
     ====================================================================
     REFVIEW PROJECT CHANGELOG HISTORY
