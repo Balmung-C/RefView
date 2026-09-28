@@ -73,4 +73,11 @@ RefView is a webapp developed using google gemini for code and setup guidance. T
     - Updated "Return to Portal" navigation link to relative path (`../index.html`) for seamless workspace exit to launcher portal.
     - Standardized single-pane (`handlePaneSearch`) and global-board (`handleGlobalBoardSearch`) search fetch URLs to root endpoint `/api/search`.
     - Optimized network routing compatibility with `netlify.toml` proxy redirects.
+
+    v2.2.0 — Hub Navigation & Directory Alignment
+    ---------------------------------------------
+    - Corrected root launcher hub navigation link for RefView from `./app/index.html` to `./refview/index.html` to resolve 404 deployment errors.
+    - Updated launcher portal cards and sub-app routing targets across all active (`/refview/`) and in-development (`/chroma-studio/`, `/storyflow/`) monorepo             modules.
+    - Standardized return-to-portal navigation links across all sub-apps to use root-relative (`../index.html`) routing.
+    - Verified Netlify proxy redirect rules (`/api/search` -> `/.netlify/functions/search`) for functional search operations across all subdirectories.
   </script>
