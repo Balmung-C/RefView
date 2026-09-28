@@ -117,7 +117,7 @@
             <div class="flex items-center justify-center sm:justify-start gap-4 text-xs font-mono text-gray-400 bg-white/5 p-3 rounded-xl border border-white/10">
                 <div class="flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span id="app-count">2 Live Tools</span>
+                    <span id="app-count">1 Live Tool</span>
                 </div>
                 <span class="text-gray-600">|</span>
                 <div>
@@ -187,11 +187,11 @@
                         <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-white/5 text-gray-400 border border-white/5">Moodboard</span>
                     </div>
 
-                    <!-- Action Button -->
-                    <a href="./refview/index.html" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-600/20">
-                        <span>Launch Refview</span>
-                        <i class="fa-solid fa-arrow-right text-xs"></i>
-                    </a>
+                    <!-- Action Button --><!-- UPDATED PATH -->
+                <a href="./refview/index.html" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-600/20">
+                    <span>Launch Refview</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
                 </div>
             </div>
 
@@ -231,21 +231,20 @@
                 </div>
             </div>
 
-            <!-- APP 3: Storyview -->
-            <div class="app-card rounded-2xl p-6 flex flex-col justify-between relative group" data-category="planning" data-name="storyboard comic node narrative script layout writer" data-status="live">
+            <!-- APP 3: StoryView -->
+            <div class="app-card rounded-2xl p-6 flex flex-col justify-between relative group" data-category="in Development" data-name="storyboard comic node narrative script layout writer" data-status="dev">
                 <div>
                     <div class="flex items-start justify-between mb-4">
                         <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl group-hover:scale-105 transition-transform">
                             <i class="fa-solid fa-film"></i>
                         </div>
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                            Live
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            In Dev
                         </span>
                     </div>
 
-                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">
-                        Storyview
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-amber-300 transition-colors">
+                        StoryFlow Board
                     </h3>
                     <p class="text-gray-400 text-sm mb-6 leading-relaxed">
                         Visual node-based storyboarding and script outline tool for video production and interactive fiction.
@@ -261,10 +260,18 @@
                     </div>
 
                     <!-- Action Button -->
-                    <a href="./storyref/index.html" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-600/20">
-                        <span>Launch Storyview</span>
+                    <a href="./storyref/" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium text-sm transition-all border border-white/10">
+                        <span>Launch Refview</span>
                         <i class="fa-solid fa-arrow-right text-xs"></i>
                     </a>
+                </div>
+            </div>
+
+            <!-- Action Button -->s
+                    <button disabled class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 text-gray-500 font-medium text-sm cursor-not-allowed border border-white/5">
+                        <span>Coming Soon</span>
+                        <i class="fa-solid fa-lock text-xs"></i>
+                    </button>
                 </div>
             </div>
 
