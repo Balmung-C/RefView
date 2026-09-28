@@ -89,14 +89,6 @@
       transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
     }
 
-    .btn-board {
-      font-size: 0.9rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      padding: 7px 14px;
-      text-transform: uppercase;
-    }
-
     .btn:hover:not(:disabled) {
       background: rgba(255, 255, 255, 0.08);
       border-color: var(--text-muted);
@@ -128,15 +120,13 @@
       background: var(--bg-dark);
     }
 
-    /* Dynamic layouts based on active pane count (Max 8) */
+    /* Dynamic layouts based on active pane count (Max 6) */
     .workspace[data-panes="1"] { grid-template-columns: 1fr; }
     .workspace[data-panes="2"] { grid-template-columns: repeat(2, 1fr); }
     .workspace[data-panes="3"] { grid-template-columns: repeat(3, 1fr); }
     .workspace[data-panes="4"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
     .workspace[data-panes="5"],
     .workspace[data-panes="6"] { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
-    .workspace[data-panes="7"],
-    .workspace[data-panes="8"] { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); }
 
     .pane {
       background: var(--bg-panel);
@@ -149,33 +139,23 @@
     }
 
     .pane-header {
-      background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(8px);
+      background: rgba(0, 0, 0, 0.2);
       padding: 8px 10px;
       border-bottom: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      z-index: 30;
-      transition: transform 0.25s ease, opacity 0.25s ease;
     }
 
     .pane-search-form {
       display: flex;
       flex: 1;
       gap: 6px;
-      position: relative;
-    }
-
-    .pane-search-container {
-      position: relative;
-      flex: 1;
-      display: flex;
     }
 
     .pane-input {
-      width: 100%;
+      flex: 1;
       background: var(--bg-dark);
       border: 1px solid var(--border-color);
       color: var(--text-main);
@@ -186,49 +166,6 @@
 
     .pane-input:focus {
       outline: 1px solid var(--accent);
-    }
-
-    /* PREDICTIVE TEXT SUGGESTIONS DROPDOWN */
-    .search-suggestions {
-      position: absolute;
-      top: calc(100% + 4px);
-      left: 0;
-      right: 0;
-      background: var(--bg-panel);
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-      max-height: 200px;
-      overflow-y: auto;
-      z-index: 1000;
-      display: none;
-    }
-
-    .search-suggestions.open {
-      display: block;
-    }
-
-    .suggestion-item {
-      padding: 6px 10px;
-      font-size: 0.78rem;
-      color: var(--text-main);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      transition: background 0.12s ease;
-    }
-
-    .suggestion-item:hover,
-    .suggestion-item.highlighted {
-      background: var(--accent);
-      color: #fff;
-    }
-
-    .suggestion-item .match-type {
-      font-size: 0.65rem;
-      opacity: 0.6;
-      text-transform: uppercase;
     }
 
     .pane-timer-select {
@@ -319,7 +256,7 @@
       position: absolute;
       top: 0;
       left: 0;
-      z-index: 40;
+      z-index: 10;
     }
 
     .timer-progress-bar {
@@ -330,45 +267,14 @@
 
     /* PANE FOOTER TOOLBAR */
     .pane-footer {
-      background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(8px);
+      background: rgba(0, 0, 0, 0.3);
       border-top: 1px solid var(--border-color);
       padding: 6px 10px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 6px;
-      z-index: 30;
-      transition: transform 0.25s ease, opacity 0.25s ease;
-    }
-
-    /* AUTO-HIDE HEADERS & FOOTERS ON ACTIVE PANES */
-    .pane.has-image .pane-header,
-    .pane.has-image .pane-footer {
-      position: absolute;
-      left: 0;
-      right: 0;
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .pane.has-image .pane-header {
-      top: 0;
-      transform: translateY(-100%);
-    }
-
-    .pane.has-image .pane-footer {
-      bottom: 0;
-      transform: translateY(100%);
-    }
-
-    .pane.has-image:hover .pane-header,
-    .pane.has-image:hover .pane-footer,
-    .pane.has-image:focus-within .pane-header,
-    .pane.has-image:focus-within .pane-footer {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0);
+      z-index: 20;
     }
 
     .tool-group {
@@ -501,6 +407,7 @@
       opacity: 1;
     }
 
+    /* Hidden File Input for Board Import */
     #boardFileInput {
       display: none;
     }
@@ -517,7 +424,7 @@
 
     <div class="header-actions">
       <button id="addPaneBtn" class="btn" onclick="addPane()">+ Add Pane</button>
-      <button id="boardToggleBtn" class="btn btn-board" onclick="toggleDrawer()">📁 Board (<span id="savedCount">0</span>)</button>
+      <button class="btn" onclick="toggleDrawer()">📁 Saved Board (<span id="savedCount">0</span>)</button>
     </div>
   </header>
 
@@ -546,89 +453,18 @@
   <input type="file" id="boardFileInput" accept=".json" onchange="handleLoadBoard(event)" />
 
   <script>
-    const MAX_PANES = 8;
+    const MAX_PANES = 6;
     const STORAGE_KEY = 'refview_saved_references';
     let paneCounter = 0;
     const panesData = new Map();
     let savedReferences = [];
 
-    /* PREDICTIVE TEXT DICTIONARY FOR ART REFERENCES */
-    const SUGGESTIONS_DICTIONARY = [
-      /* POSES */
-      { term: 'action pose', type: 'pose' },
-      { term: 'dynamic pose', type: 'pose' },
-      { term: 'foreshortening pose', type: 'pose' },
-      { term: 'contrapposto stance', type: 'pose' },
-      { term: 'sitting pose', type: 'pose' },
-      { term: 'kneeling pose', type: 'pose' },
-      { term: 'crouching pose', type: 'pose' },
-      { term: 'jumping pose', type: 'pose' },
-      { term: 'running pose', type: 'pose' },
-      { term: 'fighting stance', type: 'pose' },
-      { term: 'sword stance', type: 'pose' },
-      { term: 'hand gestures', type: 'pose' },
-      { term: 'facial expressions', type: 'expression' },
-
-      /* ANIMALS */
-      { term: 'canine anatomy', type: 'animal' },
-      { term: 'feline anatomy', type: 'animal' },
-      { term: 'equine anatomy', type: 'animal' },
-      { term: 'big cats panther lion', type: 'animal' },
-      { term: 'wolf running stance', type: 'animal' },
-      { term: 'horse in motion', type: 'animal' },
-      { term: 'birds of prey flight', type: 'animal' },
-      { term: 'eagle wingspread', type: 'animal' },
-      { term: 'owl perch pose', type: 'animal' },
-      { term: 'reptile scales detail', type: 'animal' },
-      { term: 'dragon creature concept', type: 'animal' },
-      { term: 'bear quadrupeds', type: 'animal' },
-      { term: 'deer stag silhouette', type: 'animal' },
-      { term: 'aquatic marine life', type: 'animal' },
-
-      /* ANATOMY & GENERAL REFERENCE */
-      { term: 'human anatomy study', type: 'anatomy' },
-      { term: 'torso muscle structure', type: 'anatomy' },
-      { term: 'drapery fabric folds', type: 'fabric' },
-      { term: 'dramatic rim lighting', type: 'lighting' },
-      { term: 'character turnaround', type: 'concept' },
-      { term: 'mech armor detail', type: 'sci-fi' },
-      { term: 'cyberpunk vehicle', type: 'vehicle' },
-      { term: 'vintage motorcycle', type: 'vehicle' },
-      { term: 'urban environment', type: 'environment' },
-      { term: 'sci-fi corridor', type: 'environment' },
-      { term: 'gouache color study', type: 'palette' }
-    ];
-
+    // Initialize workspace and load persistent saved references
     window.addEventListener('DOMContentLoaded', () => {
       loadSavedFromLocalStorage();
       addPane();
       addPane();
-      initClickOutsideHandler();
     });
-
-    function shuffleArray(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
-    }
-
-    function initClickOutsideHandler() {
-      document.addEventListener('click', (event) => {
-        const drawer = document.getElementById('drawer');
-        const boardBtn = document.getElementById('boardToggleBtn');
-        if (drawer && drawer.classList.contains('open')) {
-          if (!drawer.contains(event.target) && !boardBtn.contains(event.target)) {
-            drawer.classList.remove('open');
-          }
-        }
-
-        if (!event.target.closest('.pane-search-container')) {
-          document.querySelectorAll('.search-suggestions').forEach(el => el.classList.remove('open'));
-        }
-      });
-    }
 
     function loadSavedFromLocalStorage() {
       try {
@@ -679,6 +515,7 @@
       });
     }
 
+    /* ACTION 1: Add image to bottom reference board only */
     function addToBoard(id) {
       const state = panesData.get(id);
       if (!state || !state.images.length) return;
@@ -692,6 +529,7 @@
         renderSavedDrawer();
       }
 
+      // Visual feedback on the button
       const btn = document.getElementById(`btn-add-board-${id}`);
       if (btn) {
         const originalText = btn.textContent;
@@ -704,6 +542,7 @@
       }
     }
 
+    /* ACTION 2: Save/Download individual image file directly */
     async function saveImageFile(id) {
       const state = panesData.get(id);
       if (!state || !state.images.length) return;
@@ -755,6 +594,7 @@
       }
     }
 
+    /* SAVE & LOAD BOARD STATE */
     async function saveBoard() {
       const activePanes = [];
       panesData.forEach((state) => {
@@ -762,7 +602,6 @@
           query: state.query,
           images: state.images,
           currentIndex: state.currentIndex,
-          historyStack: state.historyStack,
           timerSeconds: state.timerSeconds,
           isPaused: state.isPaused,
           isGrayscale: state.isGrayscale,
@@ -775,7 +614,7 @@
       });
 
       const boardData = {
-        version: "1.7",
+        version: "1.2",
         timestamp: new Date().toISOString(),
         panes: activePanes,
         savedReferences: savedReferences
@@ -842,7 +681,6 @@
               state.query = pState.query || '';
               state.images = pState.images || [];
               state.currentIndex = pState.currentIndex || 0;
-              state.historyStack = pState.historyStack || [state.currentIndex];
               state.timerSeconds = pState.timerSeconds || 0;
               state.isPaused = pState.isPaused || false;
               state.isGrayscale = pState.isGrayscale || false;
@@ -883,40 +721,8 @@
       const addBtn = document.getElementById('addPaneBtn');
       if (addBtn) {
         addBtn.disabled = count >= MAX_PANES;
-        addBtn.title = count >= MAX_PANES ? 'Maximum 8 panes reached' : '';
+        addBtn.title = count >= MAX_PANES ? 'Maximum 6 panes reached' : '';
       }
-    }
-
-    function handleImageError(id) {
-      const state = panesData.get(id);
-      if (!state || !state.images.length) return;
-
-      console.warn(`Image failed to load in pane ${id}: ${state.images[state.currentIndex]?.imageUrl}. Auto-skipping...`);
-      
-      // Remove broken image from current array
-      state.images.splice(state.currentIndex, 1);
-
-      if (state.images.length === 0) {
-        const wrapper = document.getElementById(`wrapper-${id}`);
-        const empty = document.getElementById(`empty-${id}`);
-        const pane = document.getElementById(`pane-${id}`);
-        
-        if (wrapper) wrapper.style.display = 'none';
-        if (empty) {
-          empty.textContent = '❌ All images failed to load or were blocked.';
-          empty.style.display = 'flex';
-        }
-        if (pane) pane.classList.remove('has-image');
-        pausePaneTimer(id);
-        return;
-      }
-
-      if (state.currentIndex >= state.images.length) {
-        state.currentIndex = 0;
-      }
-
-      displayCurrentImage(id);
-      resetTimerProgress(id);
     }
 
     function addPane() {
@@ -930,7 +736,6 @@
         query: '',
         images: [],
         currentIndex: 0,
-        historyStack: [],
         timerSeconds: 0,
         progressInterval: null,
         isPaused: false,
@@ -957,20 +762,15 @@
 
         <div class="pane-header">
           <form class="pane-search-form" onsubmit="handlePaneSearch(event, ${paneId})">
-            <div class="pane-search-container">
-              <input type="text" id="input-${paneId}" class="pane-input" placeholder="Search reference..." 
-                     oninput="handleSearchInput(${paneId})" onkeydown="handleSearchKeyDown(event, ${paneId})" autocomplete="off" />
-              <div id="suggestions-${paneId}" class="search-suggestions"></div>
-            </div>
+            <input type="text" id="input-${paneId}" class="pane-input" placeholder="Search reference..." />
             <button type="submit" class="btn btn-primary" style="padding: 4px 8px; font-size: 0.75rem;">Search</button>
           </form>
 
           <select id="timer-select-${paneId}" class="pane-timer-select" onchange="setPaneTimer(${paneId}, this.value)">
             <option value="0">Off</option>
-            <option value="15">15s</option>
             <option value="30">30s</option>
             <option value="60">1m</option>
-            <option value="180">3m</option>
+            <option value="300">5m</option>
           </select>
 
           <button class="btn-tool" title="Close Pane" onclick="removePane(${paneId})">✕</button>
@@ -981,7 +781,7 @@
             🔍 Enter a query above to load references
           </div>
           <div class="pane-image-wrapper" id="wrapper-${paneId}" style="display: none;">
-            <img id="img-${paneId}" class="pane-img" src="" alt="Reference" onerror="handleImageError(${paneId})" />
+            <img id="img-${paneId}" class="pane-img" src="" alt="Reference" />
             <div id="grid-${paneId}" class="grid-overlay">
               <div></div><div></div><div></div>
               <div></div><div></div><div></div>
@@ -992,9 +792,8 @@
 
         <div class="pane-footer">
           <div class="tool-group">
-            <button class="btn-tool" title="Previous Image" onclick="prevImage(${paneId})">⏮</button>
             <button id="btn-pause-${paneId}" class="btn-tool" title="Pause / Play" onclick="togglePause(${paneId})">⏸</button>
-            <button class="btn-tool" title="Next Image" onclick="nextImage(${paneId})">⏭</button>
+            <button class="btn-tool" title="Next Image (Fast Forward)" onclick="nextImage(${paneId})">⏭</button>
             <button id="btn-gray-${paneId}" class="btn-tool" title="Grayscale Toggle" onclick="toggleGrayscale(${paneId})">🎨</button>
             <button id="btn-flip-${paneId}" class="btn-tool" title="Flip Horizontal" onclick="toggleFlip(${paneId})">↔</button>
             <button id="btn-grid-tool-${paneId}" class="btn-tool" title="3x3 Composition Grid" onclick="toggleGrid(${paneId})">井</button>
@@ -1014,86 +813,14 @@
       return paneId;
     }
 
-    /* PREDICTIVE TEXT / AUTOCOMPLETE FUNCTIONS */
-    function handleSearchInput(paneId) {
-      const input = document.getElementById(`input-${paneId}`);
-      const suggestionsBox = document.getElementById(`suggestions-${paneId}`);
-      const val = input.value.trim().toLowerCase();
-
-      if (!val) {
-        suggestionsBox.classList.remove('open');
-        suggestionsBox.innerHTML = '';
-        return;
-      }
-
-      const matches = SUGGESTIONS_DICTIONARY.filter(item => 
-        item.term.toLowerCase().includes(val)
-      ).slice(0, 6);
-
-      if (matches.length === 0) {
-        suggestionsBox.classList.remove('open');
-        suggestionsBox.innerHTML = '';
-        return;
-      }
-
-      suggestionsBox.innerHTML = matches.map((item, idx) => `
-        <div class="suggestion-item" data-term="${item.term}" onclick="selectSuggestion(${paneId}, '${item.term}')">
-          <span>${item.term}</span>
-          <span class="match-type">${item.type}</span>
-        </div>
-      `).join('');
-
-      suggestionsBox.classList.add('open');
-    }
-
-    function handleSearchKeyDown(event, paneId) {
-      const suggestionsBox = document.getElementById(`suggestions-${paneId}`);
-      if (!suggestionsBox || !suggestionsBox.classList.contains('open')) return;
-
-      const items = Array.from(suggestionsBox.querySelectorAll('.suggestion-item'));
-      if (!items.length) return;
-
-      let highlighted = suggestionsBox.querySelector('.suggestion-item.highlighted');
-      let currentIndex = items.indexOf(highlighted);
-
-      if (event.key === 'ArrowDown') {
-        event.preventDefault();
-        if (currentIndex < items.length - 1) {
-          if (highlighted) highlighted.classList.remove('highlighted');
-          items[currentIndex + 1].classList.add('highlighted');
-        } else if (currentIndex === -1) {
-          items[0].classList.add('highlighted');
-        }
-      } else if (event.key === 'ArrowUp') {
-        event.preventDefault();
-        if (currentIndex > 0) {
-          highlighted.classList.remove('highlighted');
-          items[currentIndex - 1].classList.add('highlighted');
-        }
-      } else if (event.key === 'Enter') {
-        if (highlighted) {
-          event.preventDefault();
-          selectSuggestion(paneId, highlighted.getAttribute('data-term'));
-        }
-      } else if (event.key === 'Escape') {
-        suggestionsBox.classList.remove('open');
-      }
-    }
-
-    function selectSuggestion(paneId, term) {
-      const input = document.getElementById(`input-${paneId}`);
-      const suggestionsBox = document.getElementById(`suggestions-${paneId}`);
-      input.value = term;
-      suggestionsBox.classList.remove('open');
-      handlePaneSearch(null, paneId);
-    }
-
+    /* PAN & ZOOM INTERACTION HANDLERS */
     function attachZoomPanEvents(id) {
       const viewport = document.getElementById(`viewport-${id}`);
       const state = panesData.get(id);
 
       if (!viewport) return;
 
+      // Mouse Wheel Zoom
       viewport.addEventListener('wheel', (e) => {
         if (!state.images.length) return;
         e.preventDefault();
@@ -1101,6 +828,7 @@
         const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
         let newZoom = state.zoom * zoomFactor;
 
+        // Clamp Zoom level between 100% (1.0) and 500% (5.0)
         newZoom = Math.min(Math.max(newZoom, 1), 5);
 
         if (newZoom === 1) {
@@ -1112,11 +840,12 @@
         applyTransform(id);
       }, { passive: false });
 
+      // Mouse Drag / Panning
       viewport.addEventListener('mousedown', (e) => {
         if (state.zoom <= 1 || !state.images.length) return;
         state.isDragging = true;
         state.startX = e.clientX - state.panX;
-        state.startY = e.clientY - state.startY;
+        state.startY = e.clientY - state.panY;
         viewport.classList.add('dragging');
       });
 
@@ -1134,6 +863,7 @@
         }
       });
 
+      // Double-Click to Reset Zoom
       viewport.addEventListener('dblclick', () => {
         resetZoom(id);
       });
@@ -1165,7 +895,7 @@
 
     function openSavedInNewPane(imageUrl) {
       if (panesData.size >= MAX_PANES) {
-        alert("Maximum limit of 8 panes reached. Please close a pane first.");
+        alert("Maximum limit of 6 panes reached. Please close a pane first.");
         return;
       }
 
@@ -1175,7 +905,6 @@
       const state = panesData.get(paneId);
       state.images = [{ imageUrl: imageUrl }];
       state.currentIndex = 0;
-      state.historyStack = [0];
       state.timerSeconds = 0;
       state.isPaused = true;
 
@@ -1203,16 +932,12 @@
     async function handlePaneSearch(event, id) {
       if (event) event.preventDefault();
 
-      const suggestionsBox = document.getElementById(`suggestions-${id}`);
-      if (suggestionsBox) suggestionsBox.classList.remove('open');
-
       const state = panesData.get(id);
       const query = document.getElementById(`input-${id}`).value.trim();
       if (!query) return;
 
       state.query = query;
       state.currentIndex = 0;
-      state.historyStack = [0];
 
       try {
         const response = await fetch(`/.netlify/functions/search?q=${encodeURIComponent(query)}`);
@@ -1220,7 +945,7 @@
 
         const data = await response.json();
         if (data.images && data.images.length > 0) {
-          state.images = shuffleArray([...data.images]);
+          state.images = data.images;
           resetZoom(id);
           displayCurrentImage(id);
           startPaneTimer(id);
@@ -1240,51 +965,19 @@
       const img = document.getElementById(`img-${id}`);
       const wrapper = document.getElementById(`wrapper-${id}`);
       const empty = document.getElementById(`empty-${id}`);
-      const pane = document.getElementById(`pane-${id}`);
 
       const currentItem = state.images[state.currentIndex];
       img.src = currentItem.imageUrl;
 
       empty.style.display = 'none';
       wrapper.style.display = 'flex';
-
-      if (pane) {
-        pane.classList.add('has-image');
-      }
     }
 
     function nextImage(id) {
       const state = panesData.get(id);
       if (!state.images.length) return;
 
-      if (state.images.length > 1) {
-        let randomIndex;
-        do {
-          randomIndex = Math.floor(Math.random() * state.images.length);
-        } while (randomIndex === state.currentIndex);
-        state.currentIndex = randomIndex;
-      } else {
-        state.currentIndex = (state.currentIndex + 1) % state.images.length;
-      }
-
-      state.historyStack.push(state.currentIndex);
-      resetZoom(id);
-      displayCurrentImage(id);
-      resetTimerProgress(id);
-    }
-
-    function prevImage(id) {
-      const state = panesData.get(id);
-      if (!state.images.length) return;
-
-      if (state.historyStack.length > 1) {
-        state.historyStack.pop();
-        state.currentIndex = state.historyStack[state.historyStack.length - 1];
-      } else {
-        state.currentIndex = (state.currentIndex - 1 + state.images.length) % state.images.length;
-        state.historyStack = [state.currentIndex];
-      }
-
+      state.currentIndex = (state.currentIndex + 1) % state.images.length;
       resetZoom(id);
       displayCurrentImage(id);
       resetTimerProgress(id);
@@ -1370,63 +1063,5 @@
       document.getElementById('drawer').classList.toggle('open');
     }
   </script>
-
-  <!-- APP CHANGELOG HISTORY (NON-EXECUTABLE DATA BLOCK) -->
-  <script type="text/plain" id="refview-changelogs">
-    ====================================================================
-    REFVIEW PROJECT CHANGELOG HISTORY
-    ====================================================================
-
-    v1.0.0 — Initial Release
-    ------------------------
-    - Multi-pane workspace layout supporting responsive CSS Grid.
-    - Basic search integration via Netlify serverless proxy.
-    - Image viewing capabilities with basic navigation controls (next/prev).
-    - Image timers for practice sessions.
-
-    v1.1.0 — Image Manipulations & Controls
-    --------------------------------------
-    - Added grayscale mode toggle per pane.
-    - Added horizontal flipping (mirroring) per pane.
-    - Added 3x3 compositional rule-of-thirds grid overlay.
-    - Implemented image zoom and pan features with mouse wheel and drag interactions.
-
-    v1.2.0 — Predictive Text & Search Suggestions
-    ---------------------------------------------
-    - Built-in dictionary containing art reference categories (Poses, Animals, Anatomy, Sci-Fi, etc.).
-    - Interactive dropdown suggestions supporting keyboard navigation (Up/Down/Enter/Escape).
-
-    v1.3.0 — Saved References Board & Storage
-    -----------------------------------------
-    - Collapsible bottom drawer for pinning reference images.
-    - LocalStorage persistence for saved board items.
-    - Direct double-click thumbnail opening into new workspace panes.
-
-    v1.4.0 — Board File Operations
-    ------------------------------
-    - Export active workspace layout and pinned references to `.json` board files.
-    - Import saved board files with state restoration.
-
-    v1.5.0 — UI/UX Refinements
-    --------------------------
-    - Auto-hiding header and footer toolbars on hover for active panes.
-    - Smooth UI transitions and improved empty state feedback.
-
-    v1.6.0 — Default Image Randomization
-    ------------------------------------
-    - Removed shuffle toggle button (`🔀`).
-    - Enabled default Fisher-Yates array shuffling upon search result retrieval.
-    - Non-repeating random selection when clicking next image.
-
-    v1.6.1 — Codebase Documentation
-    -------------------------------
-    - Appended complete historical changelogs into embedded non-executable script tag.
-
-    v1.7.0 — Automatic Error Handling & Auto-Skip
-    ---------------------------------------------
-    - Added `onerror` event listener to `<img>` tags (`handleImageError`).
-    - Automatically purges broken or 403 HTTP forbidden URLs from active image array and advances to next valid image seamlessly.
-  </script>
-
 </body>
 </html>
