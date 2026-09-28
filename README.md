@@ -53,3 +53,18 @@ RefView is a webapp developed using google gemini for code and setup guidance. T
     ---------------------------------------------
     - Added `onerror` event listener to `<img>` tags (`handleImageError`).
     - Automatically purges broken or 403 HTTP forbidden URLs from active image array and advances to next valid image seamlessly.
+
+    v1.8.0 — Global Fresh Board Search
+    ----------------------------------
+    - Added interactive top bar message: "Want to start fresh? Click to search all panes".
+    - Toggles to a global search bar upon click.
+    - Prompts confirmation regarding unsaved changes before execution.
+    - Fetches 30 pages of results, clears existing workspace, opens 8 panes set to 30-second timers, and updates input placeholders to "Board Search - <Query>".
+
+    v1.9.0 — Integrated Color Analysis Panel
+    ---------------------------------------
+    - Integrated right-side sliding Tools panel activated via edge hover or click-lock.
+    - Real-time sampling of active reference images using canvas extraction.
+    - 40-color swatch grid generation with 1-click clipboard copy and bulk hex export.
+    - Categorized hue distribution percentage bars and top-3 color complementary gradient breakdowns.
+  </script>
