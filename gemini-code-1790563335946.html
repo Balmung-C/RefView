@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RefView - Art Reference Manager</title>
+  <style>
+    :root {
+      --bg-dark: #0f1115;
+      --bg-panel: #161920;
+      --bg-card: #202430;
+      --accent: #4f46e5;
+      --accent-hover: #6366f1;
+      --border-color: #2a2e3d;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* HEADER STYLES */
+    header {
+      background-color: var(--bg-panel);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      flex-shrink: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-tag {
+      font-size: 0.7rem;
+      background: rgba(79, 70, 229, 0.2);
+      color: var(--accent-hover);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(79, 70, 229, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 6px 12px;
+      font-size: 0.82rem;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--text-muted);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .grid-presets {
+      display: flex;
+      background: var(--bg-dark);
+      padding: 2px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-grid {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn-grid.active {
+      background: var(--bg-card);
+      color: var(--text-main);
+    }
+
+    /* MAIN WORKSPACE & PANES */
+    .workspace {
+      flex: 1;
+      display: grid;
+      gap: 12px;
+      padding: 12px;
+      overflow: hidden;
+      background: var(--bg-dark);
+    }
+
+    /* Layout presets */
+    .workspace[data-layout="1"] { grid-template-columns: 1fr; }
+    .workspace[data-layout="2"] { grid-template-columns: repeat(2, 1fr); }
+    .workspace[data-layout="4"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+    .workspace[data-layout="6"] { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+
+    .pane {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .pane.hidden-pane {
+      display: none !important;
+    }
+
+    .pane-header {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .pane-search-form {
+      display: flex;
+      flex: 1;
+      gap: 6px;
+    }
+
+    .pane-input {
+      flex: 1;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 5px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    .pane-input:focus {
+      outline: 1px solid var(--accent);
+    }
+
+    .pane-timer-select {
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 5px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    /* PANE VIEWER AREA */
+    .pane-viewport {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #08090b;
+    }
+
+    .pane-image-wrapper {
+      position: relative;
+      max-width: 100%;
+      max-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pane-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      user-select: none;
+      transition: filter 0.2s ease, transform 0.2s ease;
+    }
+
+    .pane-img.grayscale { filter: grayscale(100%); }
+    .pane-img.flipped { transform: scaleX(-1); }
+    .pane-img.grayscale.flipped { transform: scaleX(-1); filter: grayscale(100%); }
+
+    /* 3x3 Grid Overlay */
+    .grid-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .grid-overlay.active { opacity: 1; }
+
+    .grid-overlay div {
+      border: 1px dashed rgba(255, 255, 255, 0.25);
+    }
+
+    /* EMPTY STATE */
+    .empty-pane-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      padding: 20px;
+      text-align: center;
+    }
+
+    /* TIMER PROGRESS BAR */
+    .timer-progress-container {
+      height: 3px;
+      background: rgba(255, 255, 255, 0.05);
+      width: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 10;
+    }
+
+    .timer-progress-bar {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+    }
+
+    /* PANE FOOTER TOOLBAR */
+    .pane-footer {
+      background: rgba(0, 0, 0, 0.3);
+      border-top: 1px solid var(--border-color);
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .tool-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-tool {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 4px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .btn-tool:hover {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border-color: var(--border-color);
+    }
+
+    .btn-tool.active {
+      color: var(--accent-hover);
+      background: rgba(79, 70, 229, 0.15);
+      border-color: rgba(79, 70, 229, 0.3);
+    }
+
+    /* SAVED DRAWER */
+    .drawer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 180px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border-color);
+      z-index: 200;
+      transform: translateY(100%);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .drawer.open {
+      transform: translateY(0);
+    }
+
+    .drawer-header {
+      padding: 8px 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .drawer-content {
+      flex: 1;
+      padding: 10px;
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+    }
+
+    .saved-card {
+      height: 100%;
+      min-width: 140px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .saved-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      RefView
+      <span class="brand-tag">Workspace</span>
+    </div>
+
+    <div class="header-actions">
+      <!-- Layout Presets -->
+      <div class="grid-presets">
+        <button class="btn-grid active" onclick="setLayout(1)">1</button>
+        <button class="btn-grid" onclick="setLayout(2)">2</button>
+        <button class="btn-grid" onclick="setLayout(4)">4</button>
+        <button class="btn-grid" onclick="setLayout(6)">6</button>
+      </div>
+
+      <button class="btn" onclick="addPane()">+ Add Pane</button>
+      <button class="btn" onclick="toggleDrawer()">📁 Saved (<span id="savedCount">0</span>)</button>
+    </div>
+  </header>
+
+  <!-- WORKSPACE -->
+  <main id="workspace" class="workspace" data-layout="2"></main>
+
+  <!-- SAVED REFERENCES DRAWER -->
+  <div id="drawer" class="drawer">
+    <div class="drawer-header">
+      <span>Saved References</span>
+      <button class="btn-tool" onclick="toggleDrawer()">✕ Close</button>
+    </div>
+    <div id="drawerContent" class="drawer-content">
+      <div style="color: var(--text-muted); font-size: 0.8rem; align-self: center; margin: auto;">
+        No saved references yet. Click 💾 on any pane to collect images.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeLayout = 2;
+    let paneCounter = 0;
+    const panesData = new Map();
+    const savedReferences = [];
+
+    // Initialize with 2 empty panes
+    window.addEventListener('DOMContentLoaded', () => {
+      addPane();
+      addPane();
+      setLayout(2);
+    });
+
+    function setLayout(count) {
+      activeLayout = count;
+      const workspace = document.getElementById('workspace');
+      workspace.setAttribute('data-layout', count);
+
+      // Highlight active grid button
+      document.querySelectorAll('.btn-grid').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.textContent) === count);
+      });
+
+      // Ensure we have enough total pane elements
+      while (panesData.size < count) {
+        addPane();
+      }
+
+      // Show/Hide panes based on layout limit & pause hidden ones
+      let index = 0;
+      panesData.forEach((state, id) => {
+        const el = document.getElementById(`pane-${id}`);
+        if (index < count) {
+          el.classList.remove('hidden-pane');
+        } else {
+          el.classList.add('hidden-pane');
+          pausePaneTimer(id); // Automatically pause hidden pane timer
+        }
+        index++;
+      });
+    }
+
+    function addPane() {
+      paneCounter++;
+      const paneId = paneCounter;
+
+      const state = {
+        id: paneId,
+        query: '',
+        images: [],
+        currentIndex: 0,
+        timerInterval: null,
+        timerSeconds: 0,
+        progressInterval: null,
+        isPaused: false,
+        isGrayscale: false,
+        isFlipped: false,
+        showGrid: false
+      };
+
+      panesData.set(paneId, state);
+
+      const paneEl = document.createElement('div');
+      paneEl.className = 'pane';
+      paneEl.id = `pane-${paneId}`;
+      paneEl.innerHTML = `
+        <div class="timer-progress-container">
+          <div id="progress-${paneId}" class="timer-progress-bar"></div>
+        </div>
+
+        <div class="pane-header">
+          <form class="pane-search-form" onsubmit="handlePaneSearch(event, ${paneId})">
+            <input type="text" id="input-${paneId}" class="pane-input" placeholder="Search reference..." />
+            <button type="submit" class="btn btn-primary" style="padding: 4px 8px; font-size: 0.75rem;">Search</button>
+          </form>
+
+          <select id="timer-select-${paneId}" class="pane-timer-select" onchange="setPaneTimer(${paneId}, this.value)">
+            <option value="0">Off</option>
+            <option value="30">30s</option>
+            <option value="60">1m</option>
+            <option value="300">5m</option>
+          </select>
+
+          <button class="btn-tool" title="Close Pane" onclick="removePane(${paneId})">✕</button>
+        </div>
+
+        <div class="pane-viewport" id="viewport-${paneId}">
+          <div class="empty-pane-state" id="empty-${paneId}">
+            🔍 Enter a query above to load references
+          </div>
+          <div class="pane-image-wrapper" id="wrapper-${paneId}" style="display: none;">
+            <img id="img-${paneId}" class="pane-img" src="" alt="Reference" />
+            <div id="grid-${paneId}" class="grid-overlay">
+              <div></div><div></div><div></div>
+              <div></div><div></div><div></div>
+              <div></div><div></div><div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pane-footer">
+          <div class="tool-group">
+            <button id="btn-pause-${paneId}" class="btn-tool" title="Pause / Play" onclick="togglePause(${paneId})">⏸</button>
+            <button class="btn-tool" title="Next Image (Fast Forward)" onclick="nextImage(${paneId})">⏭</button>
+            <button id="btn-gray-${paneId}" class="btn-tool" title="Grayscale Toggle" onclick="toggleGrayscale(${paneId})">🎨</button>
+            <button id="btn-flip-${paneId}" class="btn-tool" title="Flip Horizontal" onclick="toggleFlip(${paneId})">↔</button>
+            <button id="btn-grid-tool-${paneId}" class="btn-tool" title="3x3 Composition Grid" onclick="toggleGrid(${paneId})">井</button>
+          </div>
+          <div class="tool-group">
+            <button class="btn-tool" title="Save Reference" onclick="saveCurrentReference(${paneId})">💾 Save</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('workspace').appendChild(paneEl);
+      setLayout(activeLayout);
+    }
+
+    function removePane(id) {
+      if (panesData.size <= 1) return; // Keep at least 1 pane
+      pausePaneTimer(id);
+      panesData.delete(id);
+      const el = document.getElementById(`pane-${id}`);
+      if (el) el.remove();
+      setLayout(activeLayout);
+    }
+
+    async function handlePaneSearch(event, id) {
+      if (event) event.preventDefault();
+
+      const state = panesData.get(id);
+      const query = document.getElementById(`input-${id}`).value.trim();
+      if (!query) return;
+
+      state.query = query;
+      state.currentIndex = 0;
+
+      try {
+        const response = await fetch(`/.netlify/functions/search?q=${encodeURIComponent(query)}`);
+        if (!response.ok) throw new Error("Search service failed");
+
+        const data = await response.json();
+        if (data.images && data.images.length > 0) {
+          state.images = data.images;
+          displayCurrentImage(id);
+          startPaneTimer(id);
+        } else {
+          alert(`No reference images found for "${query}"`);
+        }
+      } catch (err) {
+        console.warn("Proxy unavailable:", err);
+        alert("Search endpoint unavailable. Ensure Netlify proxy is deployed.");
+      }
+    }
+
+    function displayCurrentImage(id) {
+      const state = panesData.get(id);
+      if (!state.images.length) return;
+
+      const img = document.getElementById(`img-${id}`);
+      const wrapper = document.getElementById(`wrapper-${id}`);
+      const empty = document.getElementById(`empty-${id}`);
+
+      const currentItem = state.images[state.currentIndex];
+      img.src = currentItem.imageUrl;
+
+      empty.style.display = 'none';
+      wrapper.style.display = 'flex';
+    }
+
+    function nextImage(id) {
+      const state = panesData.get(id);
+      if (!state.images.length) return;
+
+      state.currentIndex = (state.currentIndex + 1) % state.images.length;
+      displayCurrentImage(id);
+      resetTimerProgress(id);
+    }
+
+    function setPaneTimer(id, seconds) {
+      const state = panesData.get(id);
+      state.timerSeconds = parseInt(seconds, 10);
+      startPaneTimer(id);
+    }
+
+    function startPaneTimer(id) {
+      pausePaneTimer(id);
+      const state = panesData.get(id);
+
+      if (state.timerSeconds <= 0 || state.isPaused || !state.images.length) return;
+
+      let elapsed = 0;
+      const total = state.timerSeconds * 1000;
+      const intervalTime = 100;
+
+      state.progressInterval = setInterval(() => {
+        elapsed += intervalTime;
+        const pct = Math.min((elapsed / total) * 100, 100);
+        document.getElementById(`progress-${id}`).style.width = `${pct}%`;
+
+        if (elapsed >= total) {
+          nextImage(id);
+          elapsed = 0;
+        }
+      }, intervalTime);
+    }
+
+    function pausePaneTimer(id) {
+      const state = panesData.get(id);
+      if (state && state.progressInterval) {
+        clearInterval(state.progressInterval);
+        state.progressInterval = null;
+      }
+    }
+
+    function resetTimerProgress(id) {
+      document.getElementById(`progress-${id}`).style.width = '0%';
+      startPaneTimer(id);
+    }
+
+    function togglePause(id) {
+      const state = panesData.get(id);
+      state.isPaused = !state.isPaused;
+      const btn = document.getElementById(`btn-pause-${id}`);
+      btn.textContent = state.isPaused ? '▶' : '⏸';
+      btn.classList.toggle('active', state.isPaused);
+
+      if (state.isPaused) {
+        pausePaneTimer(id);
+      } else {
+        startPaneTimer(id);
+      }
+    }
+
+    function toggleGrayscale(id) {
+      const state = panesData.get(id);
+      state.isGrayscale = !state.isGrayscale;
+      document.getElementById(`img-${id}`).classList.toggle('grayscale', state.isGrayscale);
+      document.getElementById(`btn-gray-${id}`).classList.toggle('active', state.isGrayscale);
+    }
+
+    function toggleFlip(id) {
+      const state = panesData.get(id);
+      state.isFlipped = !state.isFlipped;
+      document.getElementById(`img-${id}`).classList.toggle('flipped', state.isFlipped);
+      document.getElementById(`btn-flip-${id}`).classList.toggle('active', state.isFlipped);
+    }
+
+    function toggleGrid(id) {
+      const state = panesData.get(id);
+      state.showGrid = !state.showGrid;
+      document.getElementById(`grid-${id}`).classList.toggle('active', state.showGrid);
+      document.getElementById(`btn-grid-tool-${id}`).classList.toggle('active', state.showGrid);
+    }
+
+    function saveCurrentReference(id) {
+      const state = panesData.get(id);
+      if (!state.images.length) return;
+
+      const current = state.images[state.currentIndex];
+      savedReferences.push(current);
+
+      document.getElementById('savedCount').textContent = savedReferences.length;
+
+      const drawerContent = document.getElementById('drawerContent');
+      if (savedReferences.length === 1) drawerContent.innerHTML = '';
+
+      const card = document.createElement('div');
+      card.className = 'saved-card';
+      card.innerHTML = `<img src="${current.imageUrl}" alt="Saved" />`;
+      drawerContent.appendChild(card);
+    }
+
+    function toggleDrawer() {
+      document.getElementById('drawer').classList.toggle('open');
+    }
+  </script>
+</body>
+</html>
