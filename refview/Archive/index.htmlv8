@@ -818,7 +818,7 @@
     </div>
 
     <div class="header-actions">
-      <a href="../index.html" class="btn btn-portal" title="Return to Portal">🏠 Portal</a>
+      <a href="https://balmung-c.github.io/RefView/index.html" class="btn btn-portal" title="Return to Portal">🏠 Portal</a>
       <button id="addPaneBtn" class="btn" onclick="addPane()">+ Add Pane</button>
       <button id="boardToggleBtn" class="btn btn-board" onclick="toggleDrawer()">📁 Board (<span id="savedCount">0</span>)</button>
     </div>
@@ -976,7 +976,7 @@
         const fetchPromises = [];
         for (let page = 1; page <= 30; page++) {
           fetchPromises.push(
-            fetch(`/api/search?q=${encodeURIComponent(query)}&page=${page}`)
+            fetch(`/.netlify/functions/search?q=${encodeURIComponent(query)}&page=${page}`)
               .then(res => res.ok ? res.json() : { images: [] })
               .then(data => data.images || [])
               .catch(() => [])
@@ -1636,7 +1636,7 @@
       state.historyStack = [0];
 
       try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        const response = await fetch(`/.netlify/functions/search?q=${encodeURIComponent(query)}`);
         if (!response.ok) throw new Error("Search service failed");
 
         const data = await response.json();

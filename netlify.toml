@@ -1,0 +1,17 @@
+[build]
+  # Leave publish as "." or "" so the main index.html and subfolders are published
+  publish = "."
+  # Points Netlify directly to your functions folder
+  functions = "netlify/functions"
+
+# Proxy rule to handle search requests across all apps and sub-routes
+[[redirects]]
+  from = "/api/search"
+  to = "/.netlify/functions/search"
+  status = 200
+
+# Fallback redirect for query parameters (e.g., /api/search?q=query)
+[[redirects]]
+  from = "/api/search/*"
+  to = "/.netlify/functions/search/:splat"
+  status = 200

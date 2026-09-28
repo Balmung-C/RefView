@@ -1,4 +1,4 @@
-RefView is a webapp developed using google gemini for code and setup guidance. The webapp is designed to provide a platform for artist to quickly/passively search, view, and save reference images. The web app uses 3rd party hosting and api management.
+RefView is a webapp developed using google gemini for code and setup guidance. The webapp is designed to provide a platform for artist to quickly/passively search, view, and save reference images. The web app uses 3rd party hosting and api management..
 
     ====================================================================
     REFVIEW PROJECT CHANGELOG HISTORY
@@ -67,4 +67,17 @@ RefView is a webapp developed using google gemini for code and setup guidance. T
     - Real-time sampling of active reference images using canvas extraction.
     - 40-color swatch grid generation with 1-click clipboard copy and bulk hex export.
     - Categorized hue distribution percentage bars and top-3 color complementary gradient breakdowns.
+
+    v2.1.0 — Architecture & Routing URL Alignment
+    ---------------------------------------------
+    - Updated "Return to Portal" navigation link to relative path (`../index.html`) for seamless workspace exit to launcher portal.
+    - Standardized single-pane (`handlePaneSearch`) and global-board (`handleGlobalBoardSearch`) search fetch URLs to root endpoint `/api/search`.
+    - Optimized network routing compatibility with `netlify.toml` proxy redirects.
+
+    v2.2.0 — Hub Navigation & Directory Alignment
+    ---------------------------------------------
+    - Corrected root launcher hub navigation link for RefView from `./app/index.html` to `./refview/index.html` to resolve 404 deployment errors.
+    - Updated launcher portal cards and sub-app routing targets across all active (`/refview/`) and in-development (`/chroma-studio/`, `/storyflow/`) monorepo             modules.
+    - Standardized return-to-portal navigation links across all sub-apps to use root-relative (`../index.html`) routing.
+    - Verified Netlify proxy redirect rules (`/api/search` -> `/.netlify/functions/search`) for functional search operations across all subdirectories.
   </script>
