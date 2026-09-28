@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RefView - Reference Photo Workspace (API Safe Edition)</title>
+  <style>
+    :root {
+      --bg-dark: #121316;
+      --bg-panel: #1a1c23;
+      --bg-card: #232630;
+      --accent: #4f46e5;
+      --accent-hover: #6366f1;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border-color: #2e3340;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      background-color: var(--bg-panel);
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      flex-shrink: 0;
+    }
+
+    .logo-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: 0.5px;
+    }
+
+    .logo-icon {
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 900;
+    }
+
+    .api-counter-badge {
+      font-size: 0.75rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 4px 10px;
+      border-radius: 20px;
+      color: var(--text-muted);
+    }
+
+    .api-counter-badge strong {
+      color: var(--accent-hover);
+    }
+
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-group {
+      display: flex;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 2px;
+    }
+
+    button {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-group button.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-accent {
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .btn-accent:hover {
+      background: var(--accent-hover);
+    }
+
+    .app-viewport {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .main-gallery {
+      flex: 1;
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+      overflow-y: auto;
+      transition: height 0.3s ease;
+    }
+
+    .grid-1 { grid-template-columns: 1fr; }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-4 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+    .grid-6 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+
+    .pane-card {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pane-header {
+      padding: 8px 10px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 2;
+    }
+
+    .pane-search {
+      flex: 1;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    .pane-search:focus {
+      outline: 1px solid var(--accent);
+    }
+
+    .timer-stepper {
+      display: flex;
+      align-items: center;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      overflow: hidden;
+      font-size: 0.75rem;
+    }
+
+    .timer-stepper button {
+      padding: 2px 6px;
+      font-weight: bold;
+      border-radius: 0;
+    }
+
+    .timer-val {
+      padding: 0 6px;
+      color: var(--accent-hover);
+      font-weight: 600;
+      min-width: 32px;
+      text-align: center;
+    }
+
+    .pane-viewport {
+      flex: 1;
+      position: relative;
+      background-color: #0d0e11;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      min-height: 180px;
+      cursor: pointer;
+    }
+
+    .pane-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      transition: filter 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+      user-select: none;
+    }
+
+    .pane-img.grayscale {
+      filter: grayscale(100%) contrast(110%);
+    }
+
+    .pane-img.flipped {
+      transform: scaleX(-1);
+    }
+
+    .pane-img.grayscale.flipped {
+      transform: scaleX(-1);
+      filter: grayscale(100%) contrast(110%);
+    }
+
+    .pause-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(239, 68, 68, 0.85);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 5;
+      letter-spacing: 0.5px;
+    }
+
+    .pause-badge.show {
+      opacity: 1;
+    }
+
+    .grid-overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .grid-overlay.active {
+      opacity: 0.4;
+    }
+
+    .grid-overlay div {
+      border: 1px dashed #ffffff;
+    }
+
+    .timer-progress-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.1s linear;
+      z-index: 3;
+    }
+
+    .pane-toolbar {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      gap: 4px;
+      background: rgba(18, 19, 22, 0.85);
+      backdrop-filter: blur(4px);
+      padding: 3px;
+      border-radius: 6px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 4;
+    }
+
+    .pane-card:hover .pane-toolbar {
+      opacity: 1;
+    }
+
+    .pane-toolbar button {
+      padding: 4px 6px;
+      font-size: 0.75rem;
+    }
+
+    .bottom-helper-drawer {
+      background-color: var(--bg-panel);
+      border-top: 2px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      max-height: 66vh;
+      min-height: 48px;
+      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 10;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .bottom-helper-drawer.collapsed {
+      max-height: 44px;
+    }
+
+    .drawer-header {
+      padding: 8px 16px;
+      background: var(--bg-card);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 44px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .drawer-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .folder-select {
+      background: var(--bg-dark);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    .drawer-gallery {
+      padding: 12px;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 10px;
+      max-height: calc(66vh - 44px);
+    }
+
+    .drawer-thumb-card {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+    }
+
+    .drawer-thumb-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.2s ease;
+    }
+
+    .drawer-thumb-card:hover img {
+      transform: scale(1.05);
+    }
+
+    .btn-delete-thumb {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(18, 19, 22, 0.6);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.8);
+      padding: 2px 6px;
+      font-size: 0.7rem;
+      border-radius: 4px;
+      cursor: pointer;
+      z-index: 5;
+      opacity: 0;
+      transition: all 0.2s ease;
+    }
+
+    .drawer-thumb-card:hover .btn-delete-thumb {
+      opacity: 1;
+    }
+
+    .btn-delete-thumb.confirm-state {
+      opacity: 1 !important;
+      background: var(--danger) !important;
+      color: #fff !important;
+      font-weight: 700;
+      border-color: var(--danger-hover);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--accent);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      display: none;
+      z-index: 100;
+    }
+
+    .toast.show {
+      display: block;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top App Navigation Bar -->
+  <header>
+    <div class="logo-group">
+      <div class="logo-icon">R</div>
+      <span>RefView</span>
+    </div>
+
+    <!-- API Safety Counter -->
+    <div class="api-counter-badge">
+      API Session Budget: <strong id="apiCountDisplay">0 / 20</strong> calls
+    </div>
+
+    <div class="controls-group">
+      <div class="btn-group">
+        <button onclick="setGrid(1)">1 Pane</button>
+        <button class="active" onclick="setGrid(2)">2 Panes</button>
+        <button onclick="setGrid(4)">4 Panes</button>
+        <button onclick="setGrid(6)">6 Panes</button>
+      </div>
+      <button class="btn-accent" onclick="addNewPane()">+ Add Pane</button>
+    </div>
+  </header>
+
+  <!-- App Viewport -->
+  <div class="app-viewport">
+    
+    <!-- Main Gallery Workspace Container -->
+    <main id="mainGallery" class="main-gallery grid-2"></main>
+
+    <!-- Bottom Helper Reference Container -->
+    <div id="helperDrawer" class="bottom-helper-drawer">
+      <div class="drawer-header" onclick="toggleDrawer()">
+        <div class="drawer-title">
+          📁 <span>Google Drive Saved References</span>
+          <select class="folder-select" onclick="event.stopPropagation()" onchange="changeSubfolder(this.value)">
+            <option value="main">/ RefView Reference Photos</option>
+            <option value="anatomy">/ RefView / Anatomy</option>
+            <option value="vehicles">/ RefView / Vehicle Composition</option>
+            <option value="gouache">/ RefView / Gouache Studies</option>
+          </select>
+          <button style="padding: 2px 8px; font-size: 0.75rem; background: rgba(255,255,255,0.1);" onclick="event.stopPropagation(); createNewSubfolder()">+ New Subfolder</button>
+        </div>
+        <div>
+          <button id="drawerToggleBtn" style="padding: 2px 6px;">▼ Collapse</button>
+        </div>
+      </div>
+
+      <!-- Drawer Reference Gallery Grid -->
+      <div id="drawerGallery" class="drawer-gallery"></div>
+    </div>
+
+  </div>
+
+  <div id="toast" class="toast">Saved to Google Drive!</div>
+
+  <script>
+    const SERPER_API_KEY = "01756b225fffbcea0dcd48e53821bede871afe5e";
+
+    // --- SAFETY NET CONSTANTS & CACHE ---
+    const API_MAX_SESSION_CALLS = 20; // Hard cap on total calls per browser session
+    let apiCallCounter = 0;
+    const queryCache = new Map(); // Local cache: Query string -> Array of Image URLs
+
+    function updateApiCounterDisplay() {
+      const el = document.getElementById('apiCountDisplay');
+      if (el) {
+        el.innerText = `${apiCallCounter} / ${API_MAX_SESSION_CALLS}`;
+        if (apiCallCounter >= API_MAX_SESSION_CALLS) {
+          el.style.borderColor = 'var(--danger)';
+          el.style.color = 'var(--danger)';
+        }
+      }
+    }
+
+    async function fetchLiveSearchResults(query) {
+      const normalizedQuery = query.toLowerCase().trim();
+
+      // SAFETY CHECK 1: Check Local Cache First (Zero API calls required)
+      if (queryCache.has(normalizedQuery)) {
+        return queryCache.get(normalizedQuery);
+      }
+
+      // SAFETY CHECK 2: Budget Circuit Breaker
+      if (apiCallCounter >= API_MAX_SESSION_CALLS) {
+        showToast(`API call limit reached (${API_MAX_SESSION_CALLS}). Using fallback images.`);
+        const fallback = [
+          `https://picsum.photos/seed/${encodeURIComponent(query)}1/800/600`,
+          `https://picsum.photos/seed/${encodeURIComponent(query)}2/800/600`,
+          `https://picsum.photos/seed/${encodeURIComponent(query)}3/800/600`
+        ];
+        queryCache.set(normalizedQuery, fallback);
+        return fallback;
+      }
+
+      // Fallback if no key is configured
+      if (!SERPER_API_KEY || SERPER_API_KEY === "YOUR_SERPER_API_KEY") {
+        const mockResults = [
+          `https://picsum.photos/seed/${encodeURIComponent(query)}1/800/600`,
+          `https://picsum.photos/seed/${encodeURIComponent(query)}2/800/600`,
+          `https://picsum.photos/seed/${encodeURIComponent(query)}3/800/600`
+        ];
+        queryCache.set(normalizedQuery, mockResults);
+        return mockResults;
+      }
+
+      try {
+        apiCallCounter++;
+        updateApiCounterDisplay();
+
+        const response = await fetch('https://google.serper.dev/images', {
+          method: 'POST',
+          headers: {
+            'X-API-KEY': SERPER_API_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ q: query, num: 10 })
+        });
+        
+        const data = await response.json();
+        
+        if (data.images && data.images.length > 0) {
+          const urls = data.images.map(item => item.imageUrl);
+          queryCache.set(normalizedQuery, urls);
+          return urls;
+        }
+      } catch (error) {
+        console.error("Serper API error:", error);
+      }
+
+      const fallback = [`https://picsum.photos/seed/${encodeURIComponent(query)}/800/600`];
+      queryCache.set(normalizedQuery, fallback);
+      return fallback;
+    }
+
+    let savedDriveImages = [];
+    let panesData = [];
+    let currentFolder = 'main';
+
+    async function init() {
+      panesData = [
+        { id: 1, query: 'Bull Riding', images: await fetchLiveSearchResults('Bull Riding'), currentIndex: 0, timerDuration: 45, currentTimer: 0, intervalId: null, paused: false },
+        { id: 2, query: 'Rhino Beetle', images: await fetchLiveSearchResults('Rhino Beetle'), currentIndex: 0, timerDuration: 45, currentTimer: 0, intervalId: null, paused: false }
+      ];
+      renderPanes();
+      renderDrawerGallery();
+      updateApiCounterDisplay();
+    }
+
+    function setGrid(count) {
+      const grid = document.getElementById('mainGallery');
+      grid.className = `main-gallery grid-${count}`;
+      
+      document.querySelectorAll('.btn-group button').forEach((btn, idx) => {
+        btn.classList.toggle('active', (count === 1 && idx === 0) || (count === 2 && idx === 1) || (count === 4 && idx === 2) || (count === 6 && idx === 3));
+      });
+
+      while (panesData.length < count) {
+        addPaneData();
+      }
+      renderPanes();
+    }
+
+    async function addPaneData() {
+      const topics = ['Rhinoceros', 'Comic Layouts', 'Vintage Motorcycles', 'Gouache Painting'];
+      const randTopic = topics[Math.floor(Math.random() * topics.length)];
+      
+      const newImages = await fetchLiveSearchResults(randTopic);
+      panesData.push({
+        id: Date.now() + Math.random(),
+        query: randTopic,
+        images: newImages,
+        currentIndex: 0,
+        timerDuration: 45,
+        currentTimer: 0,
+        intervalId: null,
+        paused: false
+      });
+      renderPanes();
+    }
+
+    function addNewPane() {
+      addPaneData();
+    }
+
+    function renderPanes() {
+      const container = document.getElementById('mainGallery');
+      container.innerHTML = '';
+
+      panesData.forEach(pane => {
+        const paneCard = document.createElement('div');
+        paneCard.className = 'pane-card';
+        paneCard.id = `pane-${pane.id}`;
+
+        const activeImgUrl = pane.images[pane.currentIndex] || 'https://picsum.photos/800/600';
+
+        paneCard.innerHTML = `
+          <div class="pane-header">
+            <input type="text" class="pane-search" value="${pane.query}" 
+              placeholder="Search Google image topic..." 
+              onkeydown="handleSearchKeyDown(event, '${pane.id}')">
+            
+            <div class="timer-stepper" title="Adjust rotation interval (15s increments)">
+              <button onclick="adjustTimer('${pane.id}', -15)">−</button>
+              <span class="timer-val" id="timer-val-${pane.id}">${pane.timerDuration}s</span>
+              <button onclick="adjustTimer('${pane.id}', 15)">+</button>
+            </div>
+
+            <button style="padding: 4px 6px;" onclick="fastForwardPane('${pane.id}')" title="Skip to Next Image (Fast Forward)">⏩</button>
+            <button style="padding: 4px 6px;" onclick="removePane('${pane.id}')" title="Remove Entire Pane Container">✕ Pane</button>
+          </div>
+
+          <div class="pane-viewport" onclick="togglePauseImage('${pane.id}')" title="Click image to Pause / Resume rotation">
+            <div id="pause-badge-${pane.id}" class="pause-badge ${pane.paused ? 'show' : ''}">⏸ PAUSED</div>
+            
+            <img id="img-${pane.id}" src="${activeImgUrl}" class="pane-img" alt="Reference">
+            
+            <div id="grid-${pane.id}" class="grid-overlay">
+              <div></div><div></div><div></div>
+              <div></div><div></div><div></div>
+              <div></div><div></div><div></div>
+            </div>
+            
+            <div class="pane-toolbar" onclick="event.stopPropagation()">
+              <button onclick="toggleGrayscale('${pane.id}')" title="B&W Value Check">B&W</button>
+              <button onclick="toggleFlip('${pane.id}')" title="Flip Horizontal">⇄</button>
+              <button onclick="toggleGridOverlay('${pane.id}')" title="Composition Grid">3x3</button>
+              <button onclick="saveToDrive('${pane.id}')" style="background: var(--accent);" title="Save to Drive Folder">💾 Save</button>
+            </div>
+
+            <div id="progress-${pane.id}" class="timer-progress-bar"></div>
+          </div>
+        `;
+
+        container.appendChild(paneCard);
+        startPaneTimer(pane.id);
+      });
+    }
+
+    async function handleSearchKeyDown(event, paneId) {
+      if (event.key === 'Enter') {
+        const query = event.target.value.trim();
+        if (!query) return;
+
+        const pane = panesData.find(p => p.id == paneId);
+        if (!pane) return;
+
+        showToast(`Searching for "${query}"...`);
+        pane.query = query;
+        
+        // Triggers safe fetch (uses cache or checks API session quota)
+        pane.images = await fetchLiveSearchResults(query);
+        pane.currentIndex = 0;
+        
+        const imgEl = document.getElementById(`img-${paneId}`);
+        if (imgEl && pane.images[0]) imgEl.src = pane.images[0];
+
+        resetPaneTimer(paneId);
+      }
+    }
+
+    function adjustTimer(paneId, delta) {
+      const pane = panesData.find(p => p.id == paneId);
+      if (!pane) return;
+
+      pane.timerDuration = Math.max(15, Math.min(300, pane.timerDuration + delta));
+      document.getElementById(`timer-val-${paneId}`).innerText = `${pane.timerDuration}s`;
+      resetPaneTimer(paneId);
+    }
+
+    // SAFE TIMER: Cycles locally through cached results without triggering network requests
+    function startPaneTimer(paneId) {
+      const pane = panesData.find(p => p.id == paneId);
+      if (!pane) return;
+
+      if (pane.intervalId) clearInterval(pane.intervalId);
+
+      pane.intervalId = setInterval(() => {
+        if (pane.paused) return;
+
+        pane.currentTimer += 1;
+        const pct = (pane.currentTimer / pane.timerDuration) * 100;
+        
+        const bar = document.getElementById(`progress-${paneId}`);
+        if (bar) bar.style.width = `${pct}%`;
+
+        if (pane.currentTimer >= pane.timerDuration) {
+          skipToNextImage(paneId);
+        }
+      }, 1000);
+    }
+
+    function skipToNextImage(paneId) {
+      const pane = panesData.find(p => p.id == paneId);
+      if (!pane || !pane.images.length) return;
+
+      pane.currentTimer = 0;
+      pane.currentIndex = (pane.currentIndex + 1) % pane.images.length;
+      
+      const img = document.getElementById(`img-${paneId}`);
+      if (img) img.src = pane.images[pane.currentIndex];
+
+      resetPaneTimer(paneId);
+    }
+
+    function fastForwardPane(paneId) {
+      skipToNextImage(paneId);
+      showToast('Fast forwarded to next image!');
+    }
+
+    function togglePauseImage(paneId) {
+      const pane = panesData.find(p => p.id == paneId);
+      if (!pane) return;
+
+      pane.paused = !pane.paused;
+      const badge = document.getElementById(`pause-badge-${paneId}`);
+      if (badge) {
+        badge.classList.toggle('show', pane.paused);
+      }
+      showToast(pane.paused ? 'Search Auto-Rotation Paused' : 'Search Auto-Rotation Resumed');
+    }
+
+    function resetPaneTimer(paneId) {
+      const pane = panesData.find(p => p.id == paneId);
+      if (!pane) return;
+
+      pane.currentTimer = 0;
+      const bar = document.getElementById(`progress-${paneId}`);
+      if (bar) bar.style.width = `0%`;
+    }
+
+    function removePane(paneId) {
+      const pane = panesData.find(p => p.id == paneId);
+      if (pane && pane.intervalId) clearInterval(pane.intervalId);
+      
+      panesData = panesData.filter(p => p.id != paneId);
+      renderPanes();
+    }
+
+    function toggleGrayscale(paneId) {
+      const img = document.getElementById(`img-${paneId}`);
+      if (img) img.classList.toggle('grayscale');
+    }
+
+    function toggleFlip(paneId) {
+      const img = document.getElementById(`img-${paneId}`);
+      if (img) img.classList.toggle('flipped');
+    }
+
+    function toggleGridOverlay(paneId) {
+      const grid = document.getElementById(`grid-${paneId}`);
+      if (grid) grid.classList.toggle('active');
+    }
+
+    function toggleDrawer() {
+      const drawer = document.getElementById('helperDrawer');
+      const btn = document.getElementById('drawerToggleBtn');
+      drawer.classList.toggle('collapsed');
+      btn.innerText = drawer.classList.contains('collapsed') ? '▲ Expand' : '▼ Collapse';
+    }
+
+    function renderDrawerGallery() {
+      const gallery = document.getElementById('drawerGallery');
+      gallery.innerHTML = '';
+
+      const filtered = savedDriveImages.filter(img => currentFolder === 'main' || img.folder === currentFolder);
+
+      filtered.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'drawer-thumb-card';
+        card.title = `Click to load into Pane 1 (${item.tag})`;
+        card.onclick = () => loadSavedImageToPane(item.url);
+        
+        card.innerHTML = `
+          <button id="del-thumb-${item.id}" class="btn-delete-thumb" onclick="handleDrawerPhotoDelete(event, ${item.id})" title="Delete from Drive row">✕</button>
+          <img src="${item.url}" alt="${item.tag}">
+        `;
+        gallery.appendChild(card);
+      });
+    }
+
+    function handleDrawerPhotoDelete(event, itemId) {
+      event.stopPropagation();
+
+      const item = savedDriveImages.find(i => i.id === itemId);
+      if (!item) return;
+
+      const delBtn = document.getElementById(`del-thumb-${itemId}`);
+      if (!delBtn) return;
+
+      if (item.deleteClicks === 0) {
+        item.deleteClicks = 1;
+        delBtn.classList.add('confirm-state');
+        delBtn.innerText = 'Confirm?';
+
+        item.deleteTimeout = setTimeout(() => {
+          item.deleteClicks = 0;
+          if (delBtn) {
+            delBtn.classList.remove('confirm-state');
+            delBtn.innerText = '✕';
+          }
+        }, 3000);
+
+      } else {
+        clearTimeout(item.deleteTimeout);
+        savedDriveImages = savedDriveImages.filter(i => i.id !== itemId);
+        renderDrawerGallery();
+        showToast('Photo removed from saved Drive row!');
+      }
+    }
+
+    function loadSavedImageToPane(url) {
+      if (panesData.length > 0) {
+        panesData[0].images = [url];
+        panesData[0].currentIndex = 0;
+        const img = document.getElementById(`img-${panesData[0].id}`);
+        if (img) img.src = url;
+        showToast('Loaded reference into Pane 1!');
+      }
+    }
+
+    function changeSubfolder(folderKey) {
+      currentFolder = folderKey;
+      renderDrawerGallery();
+    }
+
+    function createNewSubfolder() {
+      const name = prompt('Enter new subfolder name:');
+      if (name) {
+        showToast(`Subfolder "${name}" created in Google Drive!`);
+      }
+    }
+
+    function saveToDrive(paneId) {
+      const pane = panesData.find(p => p.id == paneId);
+      if (!pane) return;
+
+      const currentImg = pane.images[pane.currentIndex];
+      savedDriveImages.push({
+        id: Date.now(),
+        url: currentImg,
+        folder: currentFolder,
+        tag: pane.query,
+        deleteClicks: 0,
+        deleteTimeout: null
+      });
+
+      renderDrawerGallery();
+      showToast(`Saved to Drive folder!`);
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
