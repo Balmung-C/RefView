@@ -67,4 +67,10 @@ RefView is a webapp developed using google gemini for code and setup guidance. T
     - Real-time sampling of active reference images using canvas extraction.
     - 40-color swatch grid generation with 1-click clipboard copy and bulk hex export.
     - Categorized hue distribution percentage bars and top-3 color complementary gradient breakdowns.
+
+    v2.1.0 — Architecture & Routing URL Alignment
+    ---------------------------------------------
+    - Updated "Return to Portal" navigation link to relative path (`../index.html`) for seamless workspace exit to launcher portal.
+    - Standardized single-pane (`handlePaneSearch`) and global-board (`handleGlobalBoardSearch`) search fetch URLs to root endpoint `/api/search`.
+    - Optimized network routing compatibility with `netlify.toml` proxy redirects.
   </script>
