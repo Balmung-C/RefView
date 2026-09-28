@@ -86,17 +86,12 @@
       align-items: center;
       gap: 6px;
       font-weight: 500;
-      transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+      transition: background 0.15s ease, border-color 0.15s ease;
     }
 
-    .btn:hover:not(:disabled) {
+    .btn:hover {
       background: rgba(255, 255, 255, 0.08);
       border-color: var(--text-muted);
-    }
-
-    .btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
     }
 
     .btn-primary {
@@ -105,9 +100,33 @@
       color: white;
     }
 
-    .btn-primary:hover:not(:disabled) {
+    .btn-primary:hover {
       background: var(--accent-hover);
       border-color: var(--accent-hover);
+    }
+
+    .grid-presets {
+      display: flex;
+      background: var(--bg-dark);
+      padding: 2px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-grid {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn-grid.active {
+      background: var(--bg-card);
+      color: var(--text-main);
     }
 
     /* MAIN WORKSPACE & PANES */
@@ -120,13 +139,11 @@
       background: var(--bg-dark);
     }
 
-    /* Dynamic layouts based on active pane count (Max 6) */
-    .workspace[data-panes="1"] { grid-template-columns: 1fr; }
-    .workspace[data-panes="2"] { grid-template-columns: repeat(2, 1fr); }
-    .workspace[data-panes="3"] { grid-template-columns: repeat(3, 1fr); }
-    .workspace[data-panes="4"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
-    .workspace[data-panes="5"],
-    .workspace[data-panes="6"] { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+    /* Layout presets */
+    .workspace[data-layout="1"] { grid-template-columns: 1fr; }
+    .workspace[data-layout="2"] { grid-template-columns: repeat(2, 1fr); }
+    .workspace[data-layout="4"] { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+    .workspace[data-layout="6"] { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
 
     .pane {
       background: var(--bg-panel);
@@ -136,6 +153,10 @@
       flex-direction: column;
       overflow: hidden;
       position: relative;
+    }
+
+    .pane.hidden-pane {
+      display: none !important;
     }
 
     .pane-header {
@@ -296,13 +317,13 @@
       border-color: rgba(79, 70, 229, 0.3);
     }
 
-    /* COLLAPSIBLE BOTTOM DRAWER */
+    /* SAVED DRAWER */
     .drawer {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      height: 200px;
+      height: 180px;
       background: var(--bg-panel);
       border-top: 1px solid var(--border-color);
       z-index: 200;
@@ -325,12 +346,6 @@
       align-items: center;
       font-size: 0.85rem;
       font-weight: 600;
-    }
-
-    .drawer-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
     }
 
     .drawer-content {
@@ -364,34 +379,6 @@
       height: 100%;
       object-fit: cover;
     }
-
-    .saved-card .remove-btn {
-      position: absolute;
-      top: 4px;
-      right: 4px;
-      background: rgba(0, 0, 0, 0.7);
-      color: var(--danger);
-      border: none;
-      border-radius: 50%;
-      width: 22px;
-      height: 22px;
-      font-size: 0.8rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-    }
-
-    .saved-card:hover .remove-btn {
-      opacity: 1;
-    }
-
-    /* Hidden File Input for Board Import */
-    #boardFileInput {
-      display: none;
-    }
   </style>
 </head>
 <body>
@@ -404,288 +391,78 @@
     </div>
 
     <div class="header-actions">
-      <button id="addPaneBtn" class="btn" onclick="addPane()">+ Add Pane</button>
+      <!-- Layout Presets -->
+      <div class="grid-presets">
+        <button class="btn-grid active" onclick="setLayout(1)">1</button>
+        <button class="btn-grid" onclick="setLayout(2)">2</button>
+        <button class="btn-grid" onclick="setLayout(4)">4</button>
+        <button class="btn-grid" onclick="setLayout(6)">6</button>
+      </div>
+
+      <button class="btn" onclick="addPane()">+ Add Pane</button>
       <button class="btn" onclick="toggleDrawer()">📁 Saved (<span id="savedCount">0</span>)</button>
     </div>
   </header>
 
   <!-- WORKSPACE -->
-  <main id="workspace" class="workspace" data-panes="2"></main>
+  <main id="workspace" class="workspace" data-layout="2"></main>
 
-  <!-- COLLAPSIBLE BOTTOM DRAWER -->
+  <!-- SAVED REFERENCES DRAWER -->
   <div id="drawer" class="drawer">
     <div class="drawer-header">
-      <span>Saved References (Double-click thumbnail to view in pane)</span>
-      <div class="drawer-actions">
-        <button class="btn" onclick="saveBoard()" title="Save board state and saved thumbnails to a file">
-          💾 Save Board
-        </button>
-        <button class="btn" onclick="triggerLoadBoard()" title="Load a saved board file">
-          📂 Load Board
-        </button>
-        <button class="btn" style="color: var(--danger);" onclick="clearAllSaved()">Clear Saved</button>
-        <button class="btn-tool" onclick="toggleDrawer()">✕ Close</button>
+      <span>Saved References (Double-click any image to open in workspace)</span>
+      <button class="btn-tool" onclick="toggleDrawer()">✕ Close</button>
+    </div>
+    <div id="drawerContent" class="drawer-content">
+      <div style="color: var(--text-muted); font-size: 0.8rem; align-self: center; margin: auto;">
+        No saved references yet. Click 💾 on any pane to collect images.
       </div>
     </div>
-    <div id="drawerContent" class="drawer-content"></div>
   </div>
 
-  <!-- HIDDEN FILE INPUT -->
-  <input type="file" id="boardFileInput" accept=".json" onchange="handleLoadBoard(event)" />
-
   <script>
-    const MAX_PANES = 6;
-    const STORAGE_KEY = 'refview_saved_references';
+    let activeLayout = 2;
     let paneCounter = 0;
     const panesData = new Map();
-    let savedReferences = [];
+    const savedReferences = [];
 
-    // Initialize workspace and load persistent saved references
+    // Initialize with 2 empty panes
     window.addEventListener('DOMContentLoaded', () => {
-      loadSavedFromLocalStorage();
       addPane();
       addPane();
+      setLayout(2);
     });
 
-    function loadSavedFromLocalStorage() {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          savedReferences = JSON.parse(stored);
-        }
-      } catch (e) {
-        console.warn("Could not read from localStorage:", e);
-        savedReferences = [];
-      }
-      renderSavedDrawer();
-    }
-
-    function saveToLocalStorage() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(savedReferences));
-      } catch (e) {
-        console.warn("Could not save to localStorage:", e);
-      }
-    }
-
-    function renderSavedDrawer() {
-      document.getElementById('savedCount').textContent = savedReferences.length;
-      const drawerContent = document.getElementById('drawerContent');
-
-      if (savedReferences.length === 0) {
-        drawerContent.innerHTML = `
-          <div style="color: var(--text-muted); font-size: 0.8rem; align-self: center; margin: auto;">
-            No saved references yet. Click 💾 on any pane to save an image here.
-          </div>`;
-        return;
-      }
-
-      drawerContent.innerHTML = '';
-      savedReferences.forEach((item, index) => {
-        const card = document.createElement('div');
-        card.className = 'saved-card';
-        card.title = 'Double-click to open in pane | Double-click ✕ to remove';
-        card.ondblclick = () => openSavedInNewPane(item.imageUrl);
-
-        card.innerHTML = `
-          <img src="${item.imageUrl}" alt="Saved Reference" />
-          <button class="remove-btn" title="Double-click to remove" 
-                  ondblclick="event.stopPropagation(); removeSavedItem(${index})">✕</button>
-        `;
-        drawerContent.appendChild(card);
-      });
-    }
-
-    async function saveCurrentReference(id) {
-      const state = panesData.get(id);
-      if (!state || !state.images.length) return;
-
-      const current = state.images[state.currentIndex];
-      
-      // Save metadata to saved references list
-      const exists = savedReferences.some(ref => ref.imageUrl === current.imageUrl);
-      if (!exists) {
-        savedReferences.push(current);
-        saveToLocalStorage();
-        renderSavedDrawer();
-      }
-
-      // Prompt user to pick save location for binary file download
-      try {
-        const response = await fetch(current.imageUrl);
-        const blob = await response.blob();
-        
-        const ext = blob.type.split('/')[1] || 'jpg';
-        const defaultName = `reference-${Date.now()}.${ext}`;
-
-        if ('showSaveFilePicker' in window) {
-          const handle = await window.showSaveFilePicker({
-            suggestedName: defaultName,
-            types: [{
-              description: 'Image File',
-              accept: { [blob.type || 'image/jpeg']: [`.${ext}`] }
-            }]
-          });
-          const writable = await handle.createWritable();
-          await writable.write(blob);
-          await writable.close();
-        } else {
-          // Fallback download trigger
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = defaultName;
-          a.click();
-        }
-      } catch (err) {
-        console.warn("Direct file save skipped or blocked by CORS:", err);
-      }
-    }
-
-    function removeSavedItem(index) {
-      savedReferences.splice(index, 1);
-      saveToLocalStorage();
-      renderSavedDrawer();
-    }
-
-    function clearAllSaved() {
-      if (!savedReferences.length) return;
-      if (confirm("Are you sure you want to clear all saved thumbnails?")) {
-        savedReferences = [];
-        saveToLocalStorage();
-        renderSavedDrawer();
-      }
-    }
-
-    /* SAVE & LOAD BOARD STATE */
-    async function saveBoard() {
-      const activePanes = [];
-      panesData.forEach((state) => {
-        activePanes.push({
-          query: state.query,
-          images: state.images,
-          currentIndex: state.currentIndex,
-          timerSeconds: state.timerSeconds,
-          isPaused: state.isPaused,
-          isGrayscale: state.isGrayscale,
-          isFlipped: state.isFlipped,
-          showGrid: state.showGrid
-        });
-      });
-
-      const boardData = {
-        version: "1.0",
-        timestamp: new Date().toISOString(),
-        panes: activePanes,
-        savedReferences: savedReferences
-      };
-
-      const jsonString = JSON.stringify(boardData, null, 2);
-      const blob = new Blob([jsonString], { type: "application/json" });
-      const defaultName = `refview-board-${Date.now()}.json`;
-
-      try {
-        if ('showSaveFilePicker' in window) {
-          const handle = await window.showSaveFilePicker({
-            suggestedName: defaultName,
-            types: [{
-              description: 'RefView Board File (*.json)',
-              accept: { 'application/json': ['.json'] }
-            }]
-          });
-          const writable = await handle.createWritable();
-          await writable.write(blob);
-          await writable.close();
-        } else {
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = defaultName;
-          a.click();
-        }
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.error("Save Board failed:", err);
-        }
-      }
-    }
-
-    function triggerLoadBoard() {
-      document.getElementById('boardFileInput').click();
-    }
-
-    function handleLoadBoard(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const boardData = JSON.parse(e.target.result);
-          if (!boardData.panes) throw new Error("Invalid Board file format");
-
-          // Clear existing workspace
-          panesData.forEach((state, id) => removePane(id, true));
-          panesData.clear();
-          document.getElementById('workspace').innerHTML = '';
-          paneCounter = 0;
-
-          // Load Saved References
-          if (Array.isArray(boardData.savedReferences)) {
-            savedReferences = boardData.savedReferences;
-            saveToLocalStorage();
-            renderSavedDrawer();
-          }
-
-          // Restore Panes
-          boardData.panes.forEach((pState) => {
-            const paneId = addPane();
-            if (paneId) {
-              const state = panesData.get(paneId);
-              state.query = pState.query || '';
-              state.images = pState.images || [];
-              state.currentIndex = pState.currentIndex || 0;
-              state.timerSeconds = pState.timerSeconds || 0;
-              state.isPaused = pState.isPaused || false;
-              state.isGrayscale = pState.isGrayscale || false;
-              state.isFlipped = pState.isFlipped || false;
-              state.showGrid = pState.showGrid || false;
-
-              document.getElementById(`input-${paneId}`).value = state.query;
-              document.getElementById(`timer-select-${paneId}`).value = state.timerSeconds;
-
-              if (state.images.length > 0) {
-                displayCurrentImage(paneId);
-                if (state.isGrayscale) toggleGrayscale(paneId);
-                if (state.isFlipped) toggleFlip(paneId);
-                if (state.showGrid) toggleGrid(paneId);
-                if (!state.isPaused && state.timerSeconds > 0) startPaneTimer(paneId);
-              }
-            }
-          });
-
-        } catch (err) {
-          alert("Could not parse Board file. Ensure it is a valid RefView .json file.");
-          console.error(err);
-        }
-      };
-      reader.readAsText(file);
-      event.target.value = ''; // Reset input
-    }
-
-    function updateWorkspaceLayout() {
+    function setLayout(count) {
+      activeLayout = count;
       const workspace = document.getElementById('workspace');
-      const count = panesData.size;
-      workspace.setAttribute('data-panes', count);
+      workspace.setAttribute('data-layout', count);
 
-      const addBtn = document.getElementById('addPaneBtn');
-      if (addBtn) {
-        addBtn.disabled = count >= MAX_PANES;
-        addBtn.title = count >= MAX_PANES ? 'Maximum 6 panes reached' : '';
+      // Highlight active grid button
+      document.querySelectorAll('.btn-grid').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.textContent) === count);
+      });
+
+      // Ensure we have enough total pane elements
+      while (panesData.size < count) {
+        addPane();
       }
+
+      // Show/Hide panes based on layout limit & pause hidden ones
+      let index = 0;
+      panesData.forEach((state, id) => {
+        const el = document.getElementById(`pane-${id}`);
+        if (index < count) {
+          el.classList.remove('hidden-pane');
+        } else {
+          el.classList.add('hidden-pane');
+          pausePaneTimer(id); // Automatically pause hidden pane timer
+        }
+        index++;
+      });
     }
 
     function addPane() {
-      if (panesData.size >= MAX_PANES) return null;
-
       paneCounter++;
       const paneId = paneCounter;
 
@@ -694,6 +471,7 @@
         query: '',
         images: [],
         currentIndex: 0,
+        timerInterval: null,
         timerSeconds: 0,
         progressInterval: null,
         isPaused: false,
@@ -757,25 +535,21 @@
       `;
 
       document.getElementById('workspace').appendChild(paneEl);
-      updateWorkspaceLayout();
+      setLayout(activeLayout);
       return paneId;
     }
 
     function openSavedInNewPane(imageUrl) {
-      if (panesData.size >= MAX_PANES) {
-        alert("Maximum limit of 6 panes reached. Please close a pane first.");
-        return;
-      }
-
       const paneId = addPane();
-      if (!paneId) return;
-
       const state = panesData.get(paneId);
+
+      // Populate single image item
       state.images = [{ imageUrl: imageUrl }];
       state.currentIndex = 0;
       state.timerSeconds = 0;
       state.isPaused = true;
 
+      // Update UI elements
       document.getElementById(`input-${paneId}`).value = 'Saved Reference';
       document.getElementById(`timer-select-${paneId}`).value = '0';
       
@@ -788,13 +562,13 @@
       displayCurrentImage(paneId);
     }
 
-    function removePane(id, skipLayoutUpdate = false) {
-      if (panesData.size <= 1 && !skipLayoutUpdate) return;
+    function removePane(id) {
+      if (panesData.size <= 1) return; // Keep at least 1 pane
       pausePaneTimer(id);
       panesData.delete(id);
       const el = document.getElementById(`pane-${id}`);
       if (el) el.remove();
-      if (!skipLayoutUpdate) updateWorkspaceLayout();
+      setLayout(activeLayout);
     }
 
     async function handlePaneSearch(event, id) {
@@ -923,6 +697,26 @@
       state.showGrid = !state.showGrid;
       document.getElementById(`grid-${id}`).classList.toggle('active', state.showGrid);
       document.getElementById(`btn-grid-tool-${id}`).classList.toggle('active', state.showGrid);
+    }
+
+    function saveCurrentReference(id) {
+      const state = panesData.get(id);
+      if (!state.images.length) return;
+
+      const current = state.images[state.currentIndex];
+      savedReferences.push(current);
+
+      document.getElementById('savedCount').textContent = savedReferences.length;
+
+      const drawerContent = document.getElementById('drawerContent');
+      if (savedReferences.length === 1) drawerContent.innerHTML = '';
+
+      const card = document.createElement('div');
+      card.className = 'saved-card';
+      card.title = 'Double-click to open in workspace';
+      card.ondblclick = () => openSavedInNewPane(current.imageUrl);
+      card.innerHTML = `<img src="${current.imageUrl}" alt="Saved" />`;
+      drawerContent.appendChild(card);
     }
 
     function toggleDrawer() {
