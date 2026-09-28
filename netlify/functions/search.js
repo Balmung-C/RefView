@@ -1,35 +1,79 @@
-export default async (req) => {
-  const url = new URL(req.url);
-  const query = url.searchParams.get("q") || "default";
-  const apiKey = process.env.SERPER_API_KEY;
+const fetch = require('node-fetch');
 
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: "SERPER_API_KEY environment variable is not configured." }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
+exports.handler = async (event) => {
+  // 1. Grab parameters or set defaults
+  const query = event.queryStringParameters.q || '';
+  const SERPER_KEY = process.env.SERPER_API_KEY;
+
+  if (!query) {
+    return {
+      statusCode: 400,
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({ error: 'Query parameter "q" is required.' })
+    };
   }
 
+  // 2. Fetch 8 pages in parallel (~96-100 total images)
+  const pageNumbers = [1, 2, 3, 4, 5, 6, 7, 8];
+
   try {
-    const serperResponse = await fetch("https://google.serper.dev/images", {
-      method: "POST",
-      headers: {
-        "X-API-KEY": apiKey,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ q: query, num: 12 })
-    });
+    const fetchPromises = pageNumbers.map(page =>
+      fetch('https://google.serper.dev/images', {
+        method: 'POST',
+        headers: {
+          'X-API-KEY': SERPER_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          q: query,
+          page: page
+        })
+      }).then(res => res.json())
+    );
 
-    const data = await serperResponse.json();
+    const responses = await Promise.all(fetchPromises);
 
-    return new Response(JSON.stringify(data), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
+    // 3. Aggregate images across all page responses
+    let rawImages = [];
+    responses.forEach(data => {
+      if (data && Array.isArray(data.images)) {
+        rawImages = rawImages.concat(data.images);
       }
     });
+
+    // 4. Deduplicate items by image URL
+    const seenUrls = new Set();
+    const uniqueImages = rawImages.filter(item => {
+      const url = item.imageUrl || item.thumbnailUrl;
+      if (!url || seenUrls.has(url)) return false;
+      seenUrls.add(url);
+      return true;
+    });
+
+    // 5. Format payload for your frontend
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({
+        count: uniqueImages.length,
+        images: uniqueImages
+      })
+    };
+
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return {
+      statusCode: 500,
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({ error: err.message })
+    };
   }
 };
