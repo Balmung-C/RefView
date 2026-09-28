@@ -1,4 +1,4 @@
-// netlify/functions/search.js
+// refview/netlify/functions/search.js
 
 exports.handler = async (event) => {
   // Handle CORS preflight requests
